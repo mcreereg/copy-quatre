@@ -1,0 +1,10 @@
+node_modules/
+.tools/
+dist/
+coverage/
+android/
+.DS_Store
+*.local
+.env
+.vite/
+copy-quatre.code-workspace
