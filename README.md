@@ -29,13 +29,41 @@ pnpm build          # build core + web
 
 ## Android (Capacitor)
 
+Native shell is committed at `packages/web/android/`. After web changes, sync the bundle, then build an APK.
+
+**Prerequisites:** Android Studio, or JDK 21 + Android SDK. For CLI builds, set `ANDROID_HOME` (or `ANDROID_SDK_ROOT`).
+
 ```bash
-pnpm build
-pnpm cap:sync       # build web + sync to Android project
-pnpm cap:open       # open Android Studio
+pnpm cap:sync       # build web + copy dist into android/
 ```
 
-Android shell is committed at `packages/web/android/`. Run `pnpm cap:sync` after web changes to copy the latest bundle into the native project before building an APK.
+### Debug APK (CLI)
+
+```bash
+cd packages/web/android
+./gradlew assembleDebug
+```
+
+APK: `packages/web/android/app/build/outputs/apk/debug/app-debug.apk`
+
+Install on a device/emulator: `adb install packages/web/android/app/build/outputs/apk/debug/app-debug.apk`
+
+### Android Studio
+
+```bash
+pnpm cap:open       # open the android/ project
+```
+
+Then **Build → Build Bundle(s) / APK(s) → Build APK(s)**. Same debug APK path as above.
+
+### Release APK
+
+```bash
+cd packages/web/android
+./gradlew assembleRelease
+```
+
+APK: `packages/web/android/app/build/outputs/apk/release/`. No signing config in this repo, so the release APK is unsigned until you add a keystore in `app/build.gradle`.
 
 ## Project structure
 
