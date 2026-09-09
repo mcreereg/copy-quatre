@@ -9,6 +9,7 @@ type PlayScreenProps = {
   onPointerUp: () => void;
   onPause: () => void;
   onResume: () => void;
+  onQuit: () => void;
 };
 
 function formatTimer(ms: number): string {
@@ -25,6 +26,7 @@ export function PlayScreen({
   onPointerUp,
   onPause,
   onResume,
+  onQuit,
 }: PlayScreenProps) {
   const flashOpacity = getFlashOpacity(state);
   const paused = state.phase === "paused";
@@ -40,6 +42,9 @@ export function PlayScreen({
       )}
 
       <div className="hud">
+        <Button variant="secondary" onClick={onQuit}>
+          Quit
+        </Button>
         <span className="timer">{formatTimer(state.timeRemainingMs)}</span>
         <span className="score-display">Score: {state.score}</span>
         {!paused && (

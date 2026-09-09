@@ -48,6 +48,41 @@ describe("gameEngine", () => {
     expect(engine.getState().phase).toBe("playing");
   });
 
+  it("quit ends game with current score", () => {
+    const engine = createGameEngine(createRng(100));
+    engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
+    const ref = engine.getState().reference;
+    for (let r = 0; r < ref.length; r++) {
+      for (let c = 0; c < ref[r].length; c++) {
+        if (ref[r][c]) {
+          engine.dispatch({ type: "POINTER_DOWN", row: r, col: c });
+        }
+      }
+    }
+    expect(engine.getState().score).toBe(1);
+
+    const events = engine.dispatch({ type: "QUIT" });
+    expect(engine.getState().phase).toBe("gameover");
+    expect(engine.getState().score).toBe(1);
+    expect(events).toEqual([{ type: "GAME_OVER", score: 1, isHighScore: false }]);
+  });
+
+  it("quit from pause records current score", () => {
+    const engine = createGameEngine(createRng(1));
+    engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
+    engine.dispatch({ type: "PAUSE" });
+    const events = engine.dispatch({ type: "QUIT" });
+    expect(engine.getState().phase).toBe("gameover");
+    expect(events).toEqual([{ type: "GAME_OVER", score: 0, isHighScore: false }]);
+  });
+
+  it("ignores quit when not in a session", () => {
+    const engine = createGameEngine(createRng(1));
+    const events = engine.dispatch({ type: "QUIT" });
+    expect(engine.getState().phase).toBe("gameover");
+    expect(events).toEqual([]);
+  });
+
   it("toggles cell on pointer down", () => {
     const engine = createGameEngine(createRng(1));
     engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });

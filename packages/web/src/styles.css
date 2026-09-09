@@ -163,6 +163,12 @@ body {
   width: 100%;
   max-width: 700px;
   justify-content: space-between;
+  position: relative;
+  z-index: 201;
+}
+
+.hud .btn {
+  padding: 0.4rem 0.9rem;
 }
 
 .timer {

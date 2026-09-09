@@ -123,6 +123,7 @@ export function App() {
           onPointerUp={() => dispatch({ type: "POINTER_UP" })}
           onPause={() => dispatch({ type: "PAUSE" })}
           onResume={() => dispatch({ type: "RESUME" })}
+          onQuit={() => dispatch({ type: "QUIT" })}
         />
       )}
       {screen === "gameover" && (

@@ -28,4 +28,19 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "High Scores" })).toBeInTheDocument();
     expect(screen.getByText("0")).toBeInTheDocument();
   });
+
+  it("quit during play records score and shows game over", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    await user.click(screen.getByRole("button", { name: "Quit" }));
+
+    expect(screen.getByRole("heading", { name: "Time's Up!" })).toBeInTheDocument();
+    expect(screen.getByText("Score: 0")).toBeInTheDocument();
+  });
 });

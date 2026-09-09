@@ -11,6 +11,7 @@ export type GameAction =
   | { type: "TICK"; dtMs: number }
   | { type: "PAUSE" }
   | { type: "RESUME" }
+  | { type: "QUIT" }
   | { type: "POINTER_DOWN"; row: number; col: number }
   | { type: "POINTER_ENTER"; row: number; col: number }
   | { type: "POINTER_UP" };
@@ -97,6 +98,13 @@ export function createGameEngine(rng: Rng): GameEngine {
       case "RESUME":
         if (state.phase === "paused") {
           state = { ...state, phase: "playing" };
+        }
+        break;
+
+      case "QUIT":
+        if (state.phase === "playing" || state.phase === "paused") {
+          state = { ...state, phase: "gameover" };
+          events.push({ type: "GAME_OVER", score: state.score, isHighScore: false });
         }
         break;
 

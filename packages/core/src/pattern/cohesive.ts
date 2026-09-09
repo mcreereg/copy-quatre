@@ -9,11 +9,11 @@ const MAX_DENSITY = 0.65;
 const MAX_ATTEMPTS = 8;
 
 const SYMMETRY_WEIGHTS: Array<{ sym: Symmetry; weight: number }> = [
-  { sym: "rot4", weight: 30 },
-  { sym: "hv", weight: 25 },
-  { sym: "h", weight: 20 },
+  { sym: "rot4", weight: 25 },
+  { sym: "hv", weight: 10 },
+  { sym: "h", weight: 15 },
   { sym: "v", weight: 15 },
-  { sym: "none", weight: 10 },
+  { sym: "none", weight: 35 },
 ];
 
 function pickSymmetry(rng: Rng): Symmetry {
