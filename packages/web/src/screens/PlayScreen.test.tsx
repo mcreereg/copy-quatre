@@ -44,4 +44,26 @@ describe("PlayScreen", () => {
     await user.click(screen.getByRole("button", { name: "Resume" }));
     expect(onResume).toHaveBeenCalledOnce();
   });
+
+  it("does not nest flash overlay over grids", () => {
+    const { container } = render(
+      <PlayScreen
+        state={makeState({ flashPhase: "on" })}
+        onPointerDown={vi.fn()}
+        onPointerEnter={vi.fn()}
+        onPointerUp={vi.fn()}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+      />,
+    );
+
+    const overlay = container.querySelector(".flash-overlay");
+    const grids = container.querySelectorAll(".grid");
+
+    expect(overlay).not.toBeNull();
+    expect(grids).toHaveLength(2);
+    for (const grid of grids) {
+      expect(overlay?.contains(grid)).toBe(false);
+    }
+  });
 });

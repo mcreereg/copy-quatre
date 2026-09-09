@@ -212,6 +212,9 @@ body {
   gap: 3px;
   aspect-ratio: 1;
   width: 100%;
+  position: relative;
+  z-index: 101;
+  background: var(--bg);
 }
 
 .grid-interactive {
@@ -250,7 +253,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  z-index: 50;
+  z-index: 200;
   font-size: 2rem;
   font-weight: 700;
 }

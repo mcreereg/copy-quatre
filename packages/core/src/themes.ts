@@ -22,9 +22,19 @@ const ACCENTS: Record<ThemeId, { main: string; muted: string }> = {
   orange: { main: "#fb923c", muted: "#ea580c" },
 };
 
+function mixHex(a: string, b: string): string {
+  const channel = (hex: string, offset: number) => parseInt(hex.slice(offset, offset + 2), 16);
+  const avg = (offset: number) =>
+    Math.round((channel(a, offset) + channel(b, offset)) / 2)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${avg(1)}${avg(3)}${avg(5)}`;
+}
+
 export function getThemeTokens(theme: ThemeId, colorMode: ColorMode): ThemeTokens {
   const accent = ACCENTS[theme];
   const isDark = colorMode === "dark";
+  const bg = isDark ? "#1a1a1e" : "#f4f4f8";
 
   return {
     accent: accent.main,
@@ -32,8 +42,8 @@ export function getThemeTokens(theme: ThemeId, colorMode: ColorMode): ThemeToken
     cellOn: accent.main,
     cellOff: isDark ? "#2a2a2e" : "#e8e8ec",
     cellBorder: isDark ? "#3a3a40" : "#c8c8d0",
-    bg: isDark ? "#1a1a1e" : "#f4f4f8",
-    bgFlash: accent.main,
+    bg,
+    bgFlash: mixHex(accent.main, bg),
     text: isDark ? "#f0f0f4" : "#1a1a1e",
     textMuted: isDark ? "#a0a0a8" : "#606068",
     buttonBg: accent.main,

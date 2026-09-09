@@ -3,8 +3,8 @@ import { generatePattern } from "./pattern/index.js";
 import type { Rng } from "./rng.js";
 import type { GameEvent, GameState, Settings } from "./types.js";
 
-export const FLASH_ON_MS = 500;
-export const FLASH_FADE_MS = 500;
+export const FLASH_ON_MS = 250;
+export const FLASH_FADE_MS = 250;
 
 export type GameAction =
   | { type: "START"; settings: Settings }
