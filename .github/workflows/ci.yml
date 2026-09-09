@@ -82,24 +82,25 @@ jobs:
         working-directory: packages/web/android
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Verify APK signature
-        run: |
-          APK=packages/web/android/app/build/outputs/apk/release/app-release.apk
-          test -f "$APK"
-          "$ANDROID_HOME/build-tools/$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --verbose "$APK"
-
-      - name: Resolve release tag
+      - name: Resolve release version
         id: version
         run: |
           VERSION=$(node -p "require('./packages/web/package.json').version")
           SHORT_SHA="${GITHUB_SHA::7}"
           echo "tag=v${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "name=Copy Quatre v${VERSION} (${SHORT_SHA})" >> "$GITHUB_OUTPUT"
+          echo "apk=packages/web/android/app/build/outputs/apk/release/copy-quatre-v${VERSION}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Verify APK signature
+        run: |
+          APK=${{ steps.version.outputs.apk }}
+          test -f "$APK"
+          "$ANDROID_HOME/build-tools/$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --verbose "$APK"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.name }}
-          files: packages/web/android/app/build/outputs/apk/release/app-release.apk
+          files: ${{ steps.version.outputs.apk }}
           generate_release_notes: true
