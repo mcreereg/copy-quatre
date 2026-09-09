@@ -10,6 +10,17 @@ type GridProps = {
   onPointerUp?: () => void;
 };
 
+function cellFromPoint(clientX: number, clientY: number, gridEl: HTMLElement | null) {
+  if (!gridEl) return null;
+  const target = document.elementFromPoint(clientX, clientY);
+  const cell = target?.closest("[data-cell]") as HTMLElement | null;
+  if (!cell || !gridEl.contains(cell)) return null;
+  const row = Number(cell.dataset.row);
+  const col = Number(cell.dataset.col);
+  if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
+  return { row, col };
+}
+
 export function Grid({
   grid,
   interactive = false,
@@ -19,45 +30,41 @@ export function Grid({
   onPointerUp,
 }: GridProps) {
   const size = grid.length;
+  const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
-  const handlePointerDown = useCallback(
-    (row: number, col: number) => {
-      if (!interactive) return;
-      dragging.current = true;
-      onPointerDown?.(row, col);
-    },
-    [interactive, onPointerDown],
-  );
-
-  const handlePointerEnter = useCallback(
-    (row: number, col: number) => {
-      if (!interactive || !dragging.current) return;
-      onPointerEnter?.(row, col);
-    },
-    [interactive, onPointerEnter],
-  );
-
-  const handlePointerUp = useCallback(() => {
+  const endStroke = useCallback(() => {
     if (!interactive || !dragging.current) return;
     dragging.current = false;
     onPointerUp?.();
   }, [interactive, onPointerUp]);
 
+  const handlePointerMove = useCallback(
+    (event: PointerEvent) => {
+      if (!interactive || !dragging.current) return;
+      const cell = cellFromPoint(event.clientX, event.clientY, gridRef.current);
+      if (cell) onPointerEnter?.(cell.row, cell.col);
+    },
+    [interactive, onPointerEnter],
+  );
+
   useEffect(() => {
     if (!interactive) return;
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", endStroke);
+    window.addEventListener("pointercancel", endStroke);
     return () => {
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", endStroke);
+      window.removeEventListener("pointercancel", endStroke);
     };
-  }, [interactive, handlePointerUp]);
+  }, [interactive, handlePointerMove, endStroke]);
 
   return (
     <div className="grid-wrapper">
       {label && <div className="grid-label">{label}</div>}
       <div
+        ref={gridRef}
         className={`grid ${interactive ? "grid-interactive" : "grid-readonly"}`}
         style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
       >
@@ -65,13 +72,16 @@ export function Grid({
           row.map((on, c) => (
             <div
               key={`${r}-${c}`}
+              data-cell
+              data-row={r}
+              data-col={c}
               className={`cell ${on ? "cell-on" : "cell-off"}`}
               onPointerDown={(e) => {
+                if (!interactive) return;
                 e.preventDefault();
-                (e.target as HTMLElement).setPointerCapture(e.pointerId);
-                handlePointerDown(r, c);
+                dragging.current = true;
+                onPointerDown?.(r, c);
               }}
-              onPointerEnter={() => handlePointerEnter(r, c)}
             />
           )),
         )}

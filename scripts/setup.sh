@@ -18,9 +18,18 @@ if [[ ! -x "$NODE_BIN" ]]; then
   echo "Installing Node.js v${NODE_VERSION} to .tools/ ..."
   mkdir -p "$TOOLS"
   TARBALL="node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz"
-  curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/${TARBALL}" -o "$TOOLS/$TARBALL"
+  TARBALL_URL="https://nodejs.org/dist/v${NODE_VERSION}/${TARBALL}"
+  SHASUMS_URL="https://nodejs.org/dist/v${NODE_VERSION}/SHASUMS256.txt"
+  curl -fsSL "$TARBALL_URL" -o "$TOOLS/$TARBALL"
+  curl -fsSL "$SHASUMS_URL" -o "$TOOLS/SHASUMS256.txt"
+  EXPECTED="$(grep " ${TARBALL}\$" "$TOOLS/SHASUMS256.txt" | awk '{print $1}')"
+  ACTUAL="$(sha256sum "$TOOLS/$TARBALL" | awk '{print $1}')"
+  if [[ -z "$EXPECTED" || "$EXPECTED" != "$ACTUAL" ]]; then
+    echo "Node.js tarball checksum mismatch" >&2
+    exit 1
+  fi
   tar -xJf "$TOOLS/$TARBALL" -C "$TOOLS"
-  rm "$TOOLS/$TARBALL"
+  rm "$TOOLS/$TARBALL" "$TOOLS/SHASUMS256.txt"
 fi
 
 export PATH="$NODE_DIR/bin:$PATH"

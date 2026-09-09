@@ -86,9 +86,59 @@ function removeIsolated(grid: Grid): void {
   }
 }
 
+function countOnGrid(grid: Grid): number {
+  let count = 0;
+  for (const row of grid) {
+    for (const cell of row) {
+      if (cell) count++;
+    }
+  }
+  return count;
+}
+
+function countComponents(grid: Grid): number {
+  const size = grid.length;
+  const seen = new Set<string>();
+  let components = 0;
+
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (!grid[r][c]) continue;
+      const start = `${r},${c}`;
+      if (seen.has(start)) continue;
+
+      components++;
+      const queue = [{ r, c }];
+      seen.add(start);
+
+      while (queue.length > 0) {
+        const { r: cr, c: cc } = queue.pop()!;
+        for (const [nr, nc] of [
+          [cr - 1, cc],
+          [cr + 1, cc],
+          [cr, cc - 1],
+          [cr, cc + 1],
+        ]) {
+          if (!isInBounds(grid, nr, nc) || !grid[nr][nc]) continue;
+          const key = `${nr},${nc}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          queue.push({ r: nr, c: nc });
+        }
+      }
+    }
+  }
+
+  return components;
+}
+
+function isConnected(grid: Grid): boolean {
+  return countComponents(grid) <= 1;
+}
+
 function growPattern(size: number, sym: Symmetry, rng: Rng): Grid {
   const grid = createGrid(size);
-  const seedCount = rng.nextInt(1, 3);
+  const seedCount = 1;
   const used = new Set<string>();
 
   for (let s = 0; s < seedCount; s++) {
@@ -106,7 +156,9 @@ function growPattern(size: number, sym: Symmetry, rng: Rng): Grid {
     queue.push({ r, c });
   }
 
-  const targetOn = Math.round(size * size * (MIN_DENSITY + rng.next() * (MAX_DENSITY - MIN_DENSITY)));
+  const targetOn = Math.round(
+    size * size * (MIN_DENSITY + rng.next() * (MAX_DENSITY - MIN_DENSITY)),
+  );
   let attempts = 0;
   const maxAttempts = size * size * 4;
 
@@ -144,19 +196,38 @@ function growPattern(size: number, sym: Symmetry, rng: Rng): Grid {
   return grid;
 }
 
-function countOnGrid(grid: Grid): number {
-  let count = 0;
-  for (const row of grid) {
-    for (const cell of row) {
-      if (cell) count++;
-    }
-  }
-  return count;
-}
-
 function isValidPattern(grid: Grid): boolean {
   const d = density(grid);
-  return hasAnyOn(grid) && d >= MIN_DENSITY && d <= MAX_DENSITY;
+  return hasAnyOn(grid) && d >= MIN_DENSITY && d <= MAX_DENSITY && isConnected(grid);
+}
+
+function makeFallbackPattern(size: number): Grid {
+  const grid = createGrid(size);
+  const targetOn = Math.max(1, Math.round(size * size * 0.45));
+  const mid = Math.floor(size / 2);
+  const queue: Array<{ r: number; c: number }> = [{ r: mid, c: mid }];
+  grid[mid][mid] = true;
+  let onCount = 1;
+
+  while (onCount < targetOn && queue.length > 0) {
+    const { r, c } = queue.shift()!;
+    for (const [dr, dc] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (!isInBounds(grid, nr, nc) || grid[nr][nc]) continue;
+      grid[nr][nc] = true;
+      onCount++;
+      queue.push({ r: nr, c: nc });
+      if (onCount >= targetOn) break;
+    }
+  }
+
+  return grid;
 }
 
 export function generateCohesivePattern(size: number, rng: Rng): Grid {
@@ -167,13 +238,15 @@ export function generateCohesivePattern(size: number, rng: Rng): Grid {
       return grid;
     }
   }
-  // Fallback: single cross pattern guaranteed valid for size >= 2
-  const grid = createGrid(size);
-  const mid = Math.floor(size / 2);
-  for (let i = 0; i < size; i++) {
-    grid[mid][i] = true;
-    grid[i][mid] = true;
+
+  const fallback = makeFallbackPattern(size);
+  if (isValidPattern(fallback)) {
+    return fallback;
   }
+
+  const grid = createGrid(size);
+  grid[0][0] = true;
+  if (size > 1) grid[0][1] = true;
   return grid;
 }
 

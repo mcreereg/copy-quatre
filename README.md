@@ -21,20 +21,30 @@ pnpm --filter @copy-quatre/core build
 ## Development
 
 ```bash
-pnpm dev          # start web dev server at http://localhost:5173
-pnpm test         # run all tests
-pnpm test:coverage # core tests with 90%+ coverage gate
-pnpm build        # build core + web
+pnpm dev            # web dev server at http://localhost:5173
+pnpm test           # core + web tests
+pnpm test:coverage  # core tests with 90%+ coverage gate
+pnpm build          # build core + web
 ```
+
+## Android (Capacitor)
+
+```bash
+pnpm build
+pnpm cap:sync       # build web + sync to Android project
+pnpm cap:open       # open Android Studio
+```
+
+Android shell is committed at `packages/web/android/`. Run `pnpm cap:sync` after web changes to copy the latest bundle into the native project before building an APK.
 
 ## Project structure
 
 - `packages/core` — game logic, pattern generation, scoring (framework-agnostic, fully unit tested)
-- `packages/web` — React + Vite browser client
+- `packages/web` — React + Vite browser client + Capacitor shell
 
 ## Game controls
 
 - Click/tap to toggle a cell on/off
 - Click-drag or tap-drag to paint cells with the same on/off state
-- Pause button during play
+- Pause button during play; Resume from pause overlay
 - Settings and high scores accessible from title screen only

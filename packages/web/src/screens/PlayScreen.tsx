@@ -42,22 +42,25 @@ export function PlayScreen({
       <div className="hud">
         <span className="timer">{formatTimer(state.timeRemainingMs)}</span>
         <span className="score-display">Score: {state.score}</span>
-        <Button variant="secondary" onClick={paused ? onResume : onPause}>
-          {paused ? "Resume" : "Pause"}
-        </Button>
+        {!paused && (
+          <Button variant="secondary" onClick={onPause}>
+            Pause
+          </Button>
+        )}
       </div>
 
       {paused && (
         <div className="pause-overlay">
           <p>Paused</p>
+          <Button onClick={onResume}>Resume</Button>
         </div>
       )}
 
-      <div className="grids-container">
+      <div className={`grids-container ${paused ? "grids-paused" : ""}`}>
         <Grid grid={state.reference} label="Copy this" />
         <Grid
           grid={state.interactive}
-          interactive
+          interactive={!paused}
           label="Your grid"
           onPointerDown={onPointerDown}
           onPointerEnter={onPointerEnter}

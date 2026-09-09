@@ -1,11 +1,26 @@
+import { Preferences } from "@capacitor/preferences";
 import type { HighScoreStore, Settings } from "@copy-quatre/core";
 
 const SETTINGS_KEY = "copy-quatre:settings";
 const HIGH_SCORES_KEY = "copy-quatre:high-scores";
 
-export function loadSettings(fallback: Settings): Settings {
+async function readItem(key: string): Promise<string | null> {
+  const { value } = await Preferences.get({ key });
+  return value;
+}
+
+async function writeItem(key: string, value: string): Promise<boolean> {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    await Preferences.set({ key, value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadSettings(fallback: Settings): Promise<Settings> {
+  try {
+    const raw = await readItem(SETTINGS_KEY);
     if (!raw) return fallback;
     return { ...fallback, ...JSON.parse(raw) };
   } catch {
@@ -13,13 +28,13 @@ export function loadSettings(fallback: Settings): Settings {
   }
 }
 
-export function saveSettings(settings: Settings): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+export async function saveSettings(settings: Settings): Promise<boolean> {
+  return writeItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
-export function loadHighScores(): HighScoreStore {
+export async function loadHighScores(): Promise<HighScoreStore> {
   try {
-    const raw = localStorage.getItem(HIGH_SCORES_KEY);
+    const raw = await readItem(HIGH_SCORES_KEY);
     if (!raw) return {};
     return JSON.parse(raw);
   } catch {
@@ -27,6 +42,6 @@ export function loadHighScores(): HighScoreStore {
   }
 }
 
-export function saveHighScores(store: HighScoreStore): void {
-  localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(store));
+export async function saveHighScores(store: HighScoreStore): Promise<boolean> {
+  return writeItem(HIGH_SCORES_KEY, JSON.stringify(store));
 }

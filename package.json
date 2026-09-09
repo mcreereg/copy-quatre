@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm --filter @copy-quatre/core build && pnpm -r test",
     "test:coverage": "pnpm --filter @copy-quatre/core test:coverage",
     "dev": "pnpm --filter @copy-quatre/web dev",
+    "cap:sync": "pnpm --filter @copy-quatre/web cap:sync",
+    "cap:open": "pnpm --filter @copy-quatre/web cap:open",
     "setup": "bash scripts/setup.sh",
     "lint": "pnpm -r lint"
   },

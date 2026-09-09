@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from "./settings.js";
 import {
   getHighScore,
   listHighScores,
+  listHighScoresForDisplay,
   makeHighScoreKey,
   parseHighScoreKey,
   updateHighScore,
@@ -50,5 +51,18 @@ describe("highScore", () => {
     const list = listHighScores(store);
     expect(list[0].score).toBe(12);
     expect(list).toHaveLength(2);
+  });
+
+  it("filters invalid stored keys", () => {
+    const list = listHighScores({ bad: 9, "cohesive:4:90": 4 });
+    expect(list).toHaveLength(1);
+    expect(list[0].score).toBe(4);
+  });
+
+  it("shows current settings with score 0 when store empty", () => {
+    const list = listHighScoresForDisplay({}, DEFAULT_SETTINGS);
+    expect(list).toHaveLength(1);
+    expect(list[0].score).toBe(0);
+    expect(list[0].gridSize).toBe(4);
   });
 });

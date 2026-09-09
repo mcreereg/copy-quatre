@@ -149,10 +149,14 @@ export function createGameEngine(rng: Rng): GameEngine {
 
   function handlePointerDown(row: number, col: number, events: GameEvent[]): StrokeState {
     const key = cellKey(row, col);
+    const scoreBefore = state.score;
     const toggled = toggleCell(state.interactive, row, col);
     const paintMode = toggled[row][col];
     state = { ...state, interactive: toggled };
     checkMatch(events);
+    if (state.score > scoreBefore) {
+      return createStroke();
+    }
     return { active: true, paintMode, visited: new Set([key]) };
   }
 
@@ -187,6 +191,7 @@ export function createGameEngine(rng: Rng): GameEngine {
       flashPhase: "on",
       flashElapsedMs: 0,
     };
+    stroke = createStroke();
 
     events.push({ type: "SCORED", score: newScore });
   }

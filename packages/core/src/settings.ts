@@ -53,11 +53,19 @@ export function toggleColorMode(current: ColorMode): ColorMode {
   return current === "dark" ? "light" : "dark";
 }
 
+function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
 export function validateSettings(settings: Settings): Settings {
   return {
-    ...settings,
     timeLimitSec: clampTimeLimitSec(settings.timeLimitSec),
     gridSize: clampGridSize(settings.gridSize),
+    patternStyle: pickEnum(settings.patternStyle, PATTERN_STYLES, DEFAULT_SETTINGS.patternStyle),
+    theme: pickEnum(settings.theme, THEME_IDS, DEFAULT_SETTINGS.theme),
+    colorMode: pickEnum(settings.colorMode, COLOR_MODES, DEFAULT_SETTINGS.colorMode),
   };
 }
 

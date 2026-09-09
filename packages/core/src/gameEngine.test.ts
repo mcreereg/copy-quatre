@@ -28,6 +28,15 @@ describe("gameEngine", () => {
     expect(events.some((e) => e.type === "GAME_OVER")).toBe(true);
   });
 
+  it("ignores pause and resume when not applicable", () => {
+    const engine = createGameEngine(createRng(1));
+    engine.dispatch({ type: "PAUSE" });
+    expect(engine.getState().phase).toBe("gameover");
+    engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
+    engine.dispatch({ type: "RESUME" });
+    expect(engine.getState().phase).toBe("playing");
+  });
+
   it("pauses and resumes", () => {
     const engine = createGameEngine(createRng(1));
     engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
@@ -137,6 +146,21 @@ describe("gameEngine", () => {
     engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
     engine.dispatch({ type: "POINTER_DOWN", row: 0, col: 0 });
     engine.dispatch({ type: "POINTER_UP" });
+    engine.dispatch({ type: "POINTER_ENTER", row: 0, col: 1 });
+    expect(engine.getState().interactive[0][1]).toBe(false);
+  });
+
+  it("clears stroke on match", () => {
+    const engine = createGameEngine(createRng(100));
+    engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
+    const ref = engine.getState().reference;
+    for (let r = 0; r < ref.length; r++) {
+      for (let c = 0; c < ref[r].length; c++) {
+        if (ref[r][c]) {
+          engine.dispatch({ type: "POINTER_DOWN", row: r, col: c });
+        }
+      }
+    }
     engine.dispatch({ type: "POINTER_ENTER", row: 0, col: 1 });
     expect(engine.getState().interactive[0][1]).toBe(false);
   });

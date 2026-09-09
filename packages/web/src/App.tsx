@@ -22,12 +22,26 @@ type Screen = "title" | "settings" | "highscores" | "playing" | "gameover";
 
 export function App() {
   const [screen, setScreen] = useState<Screen>("title");
-  const [settings, setSettings] = useState<Settings>(() =>
-    validateSettings(loadSettings(DEFAULT_SETTINGS)),
-  );
-  const [highScores, setHighScores] = useState<HighScoreStore>(() => loadHighScores());
+  const [ready, setReady] = useState(false);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [highScores, setHighScores] = useState<HighScoreStore>({});
   const [finalScore, setFinalScore] = useState(0);
   const [isHighScore, setIsHighScore] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([loadSettings(DEFAULT_SETTINGS), loadHighScores()]).then(
+      ([loadedSettings, loadedScores]) => {
+        if (cancelled) return;
+        setSettings(validateSettings(loadedSettings));
+        setHighScores(loadedScores);
+        setReady(true);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleEvent = useCallback(
     (event: GameEvent) => {
@@ -38,10 +52,10 @@ export function App() {
           event.score,
         );
         setHighScores(store);
-        saveHighScores(store);
         setFinalScore(event.score);
         setIsHighScore(newRecord);
         setScreen("gameover");
+        void saveHighScores(store);
       }
     },
     [highScores, settings],
@@ -64,7 +78,7 @@ export function App() {
   const handleSettingsChange = (next: Settings) => {
     const validated = validateSettings(next);
     setSettings(validated);
-    saveSettings(validated);
+    void saveSettings(validated);
   };
 
   const handleStart = () => {
@@ -73,6 +87,14 @@ export function App() {
   };
 
   const currentHighScore = getHighScore(highScores, settings);
+
+  if (!ready) {
+    return (
+      <div className="app">
+        <div className="screen loading-screen">Loading…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -91,7 +113,7 @@ export function App() {
         />
       )}
       {screen === "highscores" && (
-        <HighScoresScreen store={highScores} onBack={() => setScreen("title")} />
+        <HighScoresScreen store={highScores} settings={settings} onBack={() => setScreen("title")} />
       )}
       {screen === "playing" && state && (
         <PlayScreen

@@ -38,19 +38,39 @@ export function updateHighScore(
   };
 }
 
-export function listHighScores(store: HighScoreStore): Array<{
+export type HighScoreEntry = {
   key: string;
   score: number;
   patternStyle: string;
   gridSize: number;
   timeLimitSec: number;
-}> {
+};
+
+export function listHighScores(store: HighScoreStore): HighScoreEntry[] {
   return Object.entries(store)
     .map(([key, score]) => {
       const parsed = parseHighScoreKey(key);
       if (!parsed) return null;
       return { key, score, ...parsed };
     })
-    .filter((e): e is NonNullable<typeof e> => e !== null)
+    .filter((e): e is HighScoreEntry => e !== null)
     .sort((a, b) => b.score - a.score);
+}
+
+export function listHighScoresForDisplay(
+  store: HighScoreStore,
+  currentSettings: Settings,
+): HighScoreEntry[] {
+  const entries = listHighScores(store);
+  if (entries.length > 0) return entries;
+
+  return [
+    {
+      key: makeHighScoreKey(currentSettings),
+      score: 0,
+      patternStyle: currentSettings.patternStyle,
+      gridSize: currentSettings.gridSize,
+      timeLimitSec: currentSettings.timeLimitSec,
+    },
+  ];
 }

@@ -57,6 +57,18 @@ describe("settings", () => {
     expect(s.gridSize).toBe(10);
   });
 
+  it("falls back on invalid enum fields", () => {
+    const s = validateSettings({
+      ...DEFAULT_SETTINGS,
+      patternStyle: "invalid" as typeof DEFAULT_SETTINGS.patternStyle,
+      theme: "invalid" as typeof DEFAULT_SETTINGS.theme,
+      colorMode: "invalid" as typeof DEFAULT_SETTINGS.colorMode,
+    });
+    expect(s.patternStyle).toBe("cohesive");
+    expect(s.theme).toBe("yellow");
+    expect(s.colorMode).toBe("dark");
+  });
+
   it("formats time", () => {
     expect(formatTimeLimit(90)).toBe("1:30");
     expect(formatTimeLimit(30)).toBe("0:30");

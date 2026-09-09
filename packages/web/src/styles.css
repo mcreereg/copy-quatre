@@ -152,6 +152,10 @@ body {
   color: var(--textMuted);
 }
 
+.loading-screen {
+  color: var(--textMuted);
+}
+
 .hud {
   display: flex;
   align-items: center;
@@ -242,11 +246,18 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
   z-index: 50;
   font-size: 2rem;
   font-weight: 700;
+}
+
+.grids-paused {
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 .gameover-screen h2 {

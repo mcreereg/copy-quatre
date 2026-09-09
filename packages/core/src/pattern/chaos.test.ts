@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { density, hasAnyOn } from "../grid.js";
 import { createRng } from "../rng.js";
 import { generateChaosPattern } from "./chaos.js";
@@ -24,5 +24,13 @@ describe("chaos pattern", () => {
       const grid = generateChaosPattern(3, createRng(seed));
       expect(hasAnyOn(grid)).toBe(true);
     }
+  });
+
+  it("uses fallback when random attempts keep failing", () => {
+    const rng = createRng(1);
+    vi.spyOn(rng, "next").mockReturnValue(0);
+    const grid = generateChaosPattern(4, rng);
+    expect(hasAnyOn(grid)).toBe(true);
+    expect(density(grid)).toBeGreaterThanOrEqual(0.25);
   });
 });

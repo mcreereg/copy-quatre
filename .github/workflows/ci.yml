@@ -26,4 +26,5 @@ jobs:
 
       - run: pnpm --filter @copy-quatre/core build
       - run: pnpm test:coverage
+      - run: pnpm test --filter @copy-quatre/web
       - run: pnpm --filter @copy-quatre/web build

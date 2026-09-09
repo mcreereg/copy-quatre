@@ -7,18 +7,30 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "tsc -b --noEmit"
+    "lint": "tsc -b --noEmit",
+    "test": "vitest run",
+    "cap:sync": "pnpm build && cap sync android",
+    "cap:open": "cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.0.4",
+    "@capacitor/core": "^7.0.4",
+    "@capacitor/preferences": "^7.0.4",
     "@copy-quatre/core": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.0.4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^26.0.0",
     "typescript": "^5.7.3",
-    "vite": "^6.0.11"
+    "vite": "^6.0.11",
+    "vitest": "^4.1.11"
   }
 }
