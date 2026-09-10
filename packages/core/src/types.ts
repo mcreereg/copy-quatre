@@ -26,7 +26,7 @@ export type GameState = {
 };
 
 export type GameEvent =
-  | { type: "SCORED"; score: number }
+  | { type: "SCORED"; score: number; matchedReference: Grid; matchedInteractive: Grid }
   | { type: "GAME_OVER"; score: number; isHighScore: boolean };
 
 export type HighScoreStore = Record<string, number>;

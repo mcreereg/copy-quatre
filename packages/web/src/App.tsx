@@ -118,9 +118,7 @@ export function App() {
       {screen === "playing" && state && (
         <PlayScreen
           state={state}
-          onPointerDown={(r, c) => dispatch({ type: "POINTER_DOWN", row: r, col: c })}
-          onPointerEnter={(r, c) => dispatch({ type: "POINTER_ENTER", row: r, col: c })}
-          onPointerUp={() => dispatch({ type: "POINTER_UP" })}
+          dispatch={dispatch}
           onPause={() => dispatch({ type: "PAUSE" })}
           onResume={() => dispatch({ type: "RESUME" })}
           onQuit={() => dispatch({ type: "QUIT" })}

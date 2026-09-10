@@ -1,4 +1,4 @@
-import { allOff, type GameState } from "@copy-quatre/core";
+import { allOff, type GameEvent, type GameState } from "@copy-quatre/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -24,6 +24,10 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
   };
 }
 
+function makeDispatch(events: GameEvent[] = []) {
+  return vi.fn(() => events);
+}
+
 describe("PlayScreen", () => {
   it("shows Resume inside pause overlay", async () => {
     const user = userEvent.setup();
@@ -32,9 +36,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState({ phase: "paused" })}
-        onPointerDown={vi.fn()}
-        onPointerEnter={vi.fn()}
-        onPointerUp={vi.fn()}
+        dispatch={makeDispatch()}
         onPause={vi.fn()}
         onResume={onResume}
         onQuit={vi.fn()}
@@ -56,9 +58,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState()}
-        onPointerDown={vi.fn()}
-        onPointerEnter={vi.fn()}
-        onPointerUp={vi.fn()}
+        dispatch={makeDispatch()}
         onPause={vi.fn()}
         onResume={vi.fn()}
         onQuit={onQuit}
@@ -79,9 +79,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState({ flashPhase: "on" })}
-        onPointerDown={vi.fn()}
-        onPointerEnter={vi.fn()}
-        onPointerUp={vi.fn()}
+        dispatch={makeDispatch()}
         onPause={vi.fn()}
         onResume={vi.fn()}
         onQuit={vi.fn()}
@@ -96,5 +94,19 @@ describe("PlayScreen", () => {
     for (const grid of grids) {
       expect(overlay?.contains(grid)).toBe(false);
     }
+  });
+
+  it("mounts explode layer container when playing", () => {
+    const { container } = render(
+      <PlayScreen
+        state={makeState()}
+        dispatch={makeDispatch()}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector(".explode-layer")).toBeNull();
   });
 });

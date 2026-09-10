@@ -3,8 +3,8 @@ import { generatePattern } from "./pattern/index.js";
 import type { Rng } from "./rng.js";
 import type { GameEvent, GameState, Grid, Settings } from "./types.js";
 
-export const FLASH_ON_MS = 250;
-export const FLASH_FADE_MS = 250;
+export const FLASH_ON_MS = 125;
+export const FLASH_FADE_MS = 125;
 
 export type GameAction =
   | { type: "START"; settings: Settings }
@@ -198,6 +198,8 @@ export function createGameEngine(rng: Rng): GameEngine {
   function checkMatch(events: GameEvent[]): void {
     if (!gridsEqual(state.reference, state.interactive)) return;
 
+    const matchedReference = state.reference;
+    const matchedInteractive = state.interactive;
     const newScore = state.score + 1;
     const reference =
       nextReference ??
@@ -214,7 +216,12 @@ export function createGameEngine(rng: Rng): GameEngine {
     };
     stroke = createStroke();
 
-    events.push({ type: "SCORED", score: newScore });
+    events.push({
+      type: "SCORED",
+      score: newScore,
+      matchedReference,
+      matchedInteractive,
+    });
   }
 
   return { getState, dispatch };

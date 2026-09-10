@@ -120,7 +120,11 @@ describe("gameEngine", () => {
         }
       }
     }
-    expect(lastEvents.some((e) => e.type === "SCORED")).toBe(true);
+    const scored = lastEvents.find((e) => e.type === "SCORED");
+    expect(scored).toBeDefined();
+    if (scored?.type !== "SCORED") return;
+    expect(gridsEqual(scored.matchedReference, ref)).toBe(true);
+    expect(gridsEqual(scored.matchedInteractive, ref)).toBe(true);
   });
 
   it("scores on match and resets interactive", () => {

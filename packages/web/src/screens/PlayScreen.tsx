@@ -1,12 +1,18 @@
-import { getFlashOpacity, type GameState } from "@copy-quatre/core";
+import {
+  getFlashOpacity,
+  type GameAction,
+  type GameEvent,
+  type GameState,
+} from "@copy-quatre/core";
+import { useCallback, useRef } from "react";
 import { Button } from "../components/Button";
+import { ExplodeLayer } from "../components/ExplodeLayer";
 import { Grid } from "../components/Grid";
+import { useExplodeAnimation } from "../hooks/useExplodeAnimation";
 
 type PlayScreenProps = {
   state: GameState;
-  onPointerDown: (row: number, col: number) => void;
-  onPointerEnter: (row: number, col: number) => void;
-  onPointerUp: () => void;
+  dispatch: (action: GameAction) => GameEvent[];
   onPause: () => void;
   onResume: () => void;
   onQuit: () => void;
@@ -19,17 +25,49 @@ function formatTimer(ms: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+function handleScoredEvents(
+  events: GameEvent[],
+  spawn: (matchedReference: GameState["reference"], matchedInteractive: GameState["interactive"]) => void,
+) {
+  for (const event of events) {
+    if (event.type === "SCORED") {
+      spawn(event.matchedReference, event.matchedInteractive);
+    }
+  }
+}
+
 export function PlayScreen({
   state,
-  onPointerDown,
-  onPointerEnter,
-  onPointerUp,
+  dispatch,
   onPause,
   onResume,
   onQuit,
 }: PlayScreenProps) {
   const flashOpacity = getFlashOpacity(state);
   const paused = state.phase === "paused";
+  const referenceGridRef = useRef<HTMLDivElement>(null);
+  const interactiveGridRef = useRef<HTMLDivElement>(null);
+  const { cells, spawn } = useExplodeAnimation(referenceGridRef, interactiveGridRef);
+
+  const handlePointerDown = useCallback(
+    (row: number, col: number) => {
+      const events = dispatch({ type: "POINTER_DOWN", row, col });
+      handleScoredEvents(events, spawn);
+    },
+    [dispatch, spawn],
+  );
+
+  const handlePointerEnter = useCallback(
+    (row: number, col: number) => {
+      const events = dispatch({ type: "POINTER_ENTER", row, col });
+      handleScoredEvents(events, spawn);
+    },
+    [dispatch, spawn],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    dispatch({ type: "POINTER_UP" });
+  }, [dispatch]);
 
   return (
     <div className="screen play-screen">
@@ -40,6 +78,8 @@ export function PlayScreen({
           aria-hidden="true"
         />
       )}
+
+      <ExplodeLayer cells={cells} />
 
       <div className="hud">
         <Button variant="secondary" onClick={onQuit}>
@@ -67,14 +107,15 @@ export function PlayScreen({
 
       {!paused && (
         <div className="grids-container">
-          <Grid grid={state.reference} label="Copy this" />
+          <Grid grid={state.reference} label="Copy this" gridRef={referenceGridRef} />
           <Grid
             grid={state.interactive}
             interactive
             label="Your grid"
-            onPointerDown={onPointerDown}
-            onPointerEnter={onPointerEnter}
-            onPointerUp={onPointerUp}
+            gridRef={interactiveGridRef}
+            onPointerDown={handlePointerDown}
+            onPointerEnter={handlePointerEnter}
+            onPointerUp={handlePointerUp}
           />
         </div>
       )}

@@ -1,10 +1,11 @@
 import type { Grid as GridType } from "@copy-quatre/core";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type Ref } from "react";
 
 type GridProps = {
   grid: GridType;
   interactive?: boolean;
   label?: string;
+  gridRef?: Ref<HTMLDivElement>;
   onPointerDown?: (row: number, col: number) => void;
   onPointerEnter?: (row: number, col: number) => void;
   onPointerUp?: () => void;
@@ -49,12 +50,14 @@ export function Grid({
   grid,
   interactive = false,
   label,
+  gridRef: externalGridRef,
   onPointerDown,
   onPointerEnter,
   onPointerUp,
 }: GridProps) {
   const size = grid.length;
-  const gridRef = useRef<HTMLDivElement>(null);
+  const internalGridRef = useRef<HTMLDivElement>(null);
+  const gridRef = externalGridRef ?? internalGridRef;
   const dragging = useRef(false);
   const pendingOutsideCell = useRef<{ row: number; col: number } | null>(null);
 
