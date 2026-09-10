@@ -56,9 +56,20 @@ export function Grid({
   onPointerUp,
 }: GridProps) {
   const size = grid.length;
-  const internalGridRef = useRef<HTMLDivElement>(null);
-  const gridRef = externalGridRef ?? internalGridRef;
+  const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+
+  const setGridRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      gridRef.current = node;
+      if (typeof externalGridRef === "function") {
+        externalGridRef(node);
+      } else if (externalGridRef) {
+        externalGridRef.current = node;
+      }
+    },
+    [externalGridRef],
+  );
   const pendingOutsideCell = useRef<{ row: number; col: number } | null>(null);
 
   const endStroke = useCallback(() => {
@@ -104,7 +115,7 @@ export function Grid({
     <div className="grid-wrapper">
       {label && <div className="grid-label">{label}</div>}
       <div
-        ref={gridRef}
+        ref={setGridRef}
         className={`grid ${interactive ? "grid-interactive" : "grid-readonly"}`}
         style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
         onPointerDown={(e) => {
