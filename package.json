@@ -10,7 +10,9 @@
     "cap:sync": "pnpm --filter @copy-quatre/web cap:sync",
     "cap:open": "pnpm --filter @copy-quatre/web cap:open",
     "setup": "bash scripts/setup.sh",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "version:check": "node scripts/check-version-bump.mjs",
+    "android:icons": "bash scripts/generate-android-icons.sh"
   },
   "engines": {
     "node": ">=20"
