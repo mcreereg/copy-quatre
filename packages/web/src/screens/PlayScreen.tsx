@@ -47,7 +47,11 @@ export function PlayScreen({
         </Button>
         <span className="timer">{formatTimer(state.timeRemainingMs)}</span>
         <span className="score-display">Score: {state.score}</span>
-        {!paused && (
+        {paused ? (
+          <Button variant="secondary" onClick={onResume}>
+            Resume
+          </Button>
+        ) : (
           <Button variant="secondary" onClick={onPause}>
             Pause
           </Button>
@@ -61,17 +65,19 @@ export function PlayScreen({
         </div>
       )}
 
-      <div className={`grids-container ${paused ? "grids-paused" : ""}`}>
-        <Grid grid={state.reference} label="Copy this" />
-        <Grid
-          grid={state.interactive}
-          interactive={!paused}
-          label="Your grid"
-          onPointerDown={onPointerDown}
-          onPointerEnter={onPointerEnter}
-          onPointerUp={onPointerUp}
-        />
-      </div>
+      {!paused && (
+        <div className="grids-container">
+          <Grid grid={state.reference} label="Copy this" />
+          <Grid
+            grid={state.interactive}
+            interactive
+            label="Your grid"
+            onPointerDown={onPointerDown}
+            onPointerEnter={onPointerEnter}
+            onPointerUp={onPointerUp}
+          />
+        </div>
+      )}
     </div>
   );
 }
