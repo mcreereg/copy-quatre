@@ -18,8 +18,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     interactive: allOff(4),
     score: 0,
     timeRemainingMs: 90000,
-    flashPhase: "none",
-    flashElapsedMs: 0,
     ...overrides,
   };
 }
@@ -73,27 +71,6 @@ describe("PlayScreen", () => {
 
     await user.click(hud!.children[0] as HTMLElement);
     expect(onQuit).toHaveBeenCalledOnce();
-  });
-
-  it("does not nest flash overlay over grids", () => {
-    const { container } = render(
-      <PlayScreen
-        state={makeState({ flashPhase: "on" })}
-        dispatch={makeDispatch()}
-        onPause={vi.fn()}
-        onResume={vi.fn()}
-        onQuit={vi.fn()}
-      />,
-    );
-
-    const overlay = container.querySelector(".flash-overlay");
-    const grids = container.querySelectorAll(".grid");
-
-    expect(overlay).not.toBeNull();
-    expect(grids).toHaveLength(2);
-    for (const grid of grids) {
-      expect(overlay?.contains(grid)).toBe(false);
-    }
   });
 
   it("mounts explode layer container when playing", () => {

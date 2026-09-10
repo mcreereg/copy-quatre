@@ -21,8 +21,6 @@ export type GameState = {
   interactive: Grid;
   score: number;
   timeRemainingMs: number;
-  flashPhase: "none" | "on" | "fade";
-  flashElapsedMs: number;
 };
 
 export type GameEvent =

@@ -1,5 +1,4 @@
 import {
-  getFlashOpacity,
   type GameAction,
   type GameEvent,
   type GameState,
@@ -43,11 +42,13 @@ export function PlayScreen({
   onResume,
   onQuit,
 }: PlayScreenProps) {
-  const flashOpacity = getFlashOpacity(state);
   const paused = state.phase === "paused";
   const referenceGridRef = useRef<HTMLDivElement>(null);
   const interactiveGridRef = useRef<HTMLDivElement>(null);
-  const { cells, spawn } = useExplodeAnimation(referenceGridRef, interactiveGridRef);
+  const { cells, midlines, spawn } = useExplodeAnimation(
+    referenceGridRef,
+    interactiveGridRef,
+  );
 
   const handlePointerDown = useCallback(
     (row: number, col: number) => {
@@ -71,15 +72,7 @@ export function PlayScreen({
 
   return (
     <div className="screen play-screen">
-      {flashOpacity > 0 && (
-        <div
-          className="flash-overlay"
-          style={{ opacity: flashOpacity }}
-          aria-hidden="true"
-        />
-      )}
-
-      <ExplodeLayer cells={cells} />
+      <ExplodeLayer cells={cells} midlines={midlines} />
 
       <div className="hud">
         <Button variant="secondary" onClick={onQuit}>

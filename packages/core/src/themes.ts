@@ -15,7 +15,7 @@ export type ThemeTokens = {
 };
 
 const ACCENTS: Record<ThemeId, { main: string; muted: string }> = {
-  yellow: { main: "#f5c518", muted: "#c9a012" },
+  yellow: { main: "#ffff28", muted: "#cccc20" },
   cyan: { main: "#22d3ee", muted: "#0891b2" },
   magenta: { main: "#e879f9", muted: "#c026d3" },
   green: { main: "#4ade80", muted: "#16a34a" },

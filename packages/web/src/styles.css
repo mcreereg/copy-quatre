@@ -265,14 +265,6 @@ body {
   background: var(--cellOff);
 }
 
-.flash-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bgFlash);
-  pointer-events: none;
-  z-index: 100;
-}
-
 .explode-layer {
   position: fixed;
   inset: 0;
@@ -282,10 +274,75 @@ body {
 
 .flying-cell {
   position: fixed;
+  left: 0;
+  top: 0;
   pointer-events: none;
   border-radius: 4px;
   border: 1px solid var(--cellBorder);
-  will-change: transform;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.explode-midline {
+  position: fixed;
+  pointer-events: none;
+  z-index: 151;
+  border-radius: 2px;
+  background: var(--cellOn);
+  box-shadow:
+    0 0 6px 1px #fff,
+    0 0 18px 6px var(--cellOn),
+    0 0 42px 14px var(--bgFlash);
+  will-change: transform, opacity;
+}
+
+.explode-midline::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  opacity: 0.85;
+}
+
+.explode-midline-x {
+  transform-origin: center;
+  animation: explode-midline-x 120ms ease-out forwards;
+}
+
+.explode-midline-y {
+  transform-origin: center;
+  animation: explode-midline-y 120ms ease-out forwards;
+}
+
+@keyframes explode-midline-x {
+  0% {
+    opacity: 1;
+    transform: scaleX(0.35);
+  }
+  22% {
+    opacity: 1;
+    transform: scaleX(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(16);
+  }
+}
+
+@keyframes explode-midline-y {
+  0% {
+    opacity: 1;
+    transform: scaleY(0.35);
+  }
+  22% {
+    opacity: 1;
+    transform: scaleY(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(16);
+  }
 }
 
 .pause-overlay {

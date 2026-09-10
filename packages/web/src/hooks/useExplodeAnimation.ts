@@ -1,42 +1,50 @@
 import type { Grid } from "@copy-quatre/core";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
-  buildFlyingCells,
+  buildExplosion,
   GRIDS_SIDE_BY_SIDE_QUERY,
-  isRectOffScreen,
+  MIDLINE_DURATION_MS,
+  stepFlyingCell,
   type FlyingCell,
+  type MidlineBlast,
 } from "./explodeAnimation.js";
+
+let nextBlastId = 0;
 
 export function useExplodeAnimation(
   referenceGridRef: RefObject<HTMLDivElement | null>,
   interactiveGridRef: RefObject<HTMLDivElement | null>,
 ) {
   const [cells, setCells] = useState<FlyingCell[]>([]);
+  const [midlines, setMidlines] = useState<MidlineBlast[]>([]);
   const cellsRef = useRef<FlyingCell[]>([]);
   const rafRef = useRef(0);
   const lastFrameRef = useRef(0);
   const runningRef = useRef(false);
+  const timeoutsRef = useRef<number[]>([]);
 
   const startLoop = useCallback(() => {
     if (runningRef.current) return;
     runningRef.current = true;
-    lastFrameRef.current = 0;
+    lastFrameRef.current = performance.now();
 
     const tick = (now: number) => {
       const dt = lastFrameRef.current ? now - lastFrameRef.current : 0;
       lastFrameRef.current = now;
 
       if (dt > 0 && cellsRef.current.length > 0) {
-        const next = cellsRef.current
-          .map((cell) => ({
-            ...cell,
-            x: cell.x + cell.vx * dt,
-            y: cell.y + cell.vy * dt,
-          }))
-          .filter((cell) => !isRectOffScreen(cell.x, cell.y, cell.width, cell.height));
+        let changed = false;
+        const next: FlyingCell[] = [];
+        for (const cell of cellsRef.current) {
+          const stepped = stepFlyingCell(cell, now, dt);
+          if (stepped !== cell) changed = true;
+          if (stepped) next.push(stepped);
+        }
 
-        cellsRef.current = next;
-        setCells([...next]);
+        if (changed) {
+          cellsRef.current = next;
+          setCells(next);
+        }
       }
 
       if (cellsRef.current.length > 0) {
@@ -57,6 +65,9 @@ export function useExplodeAnimation(
         cancelAnimationFrame(rafRef.current);
       }
       runningRef.current = false;
+      for (const id of timeoutsRef.current) {
+        window.clearTimeout(id);
+      }
     };
   }, []);
 
@@ -67,21 +78,33 @@ export function useExplodeAnimation(
       if (!referenceEl || !interactiveEl) return;
 
       const sideBySide = window.matchMedia(GRIDS_SIDE_BY_SIDE_QUERY).matches;
-      const spawned = buildFlyingCells(
+      const blastId = nextBlastId++;
+      const spawned = buildExplosion(
         matchedReference,
         matchedInteractive,
         referenceEl,
         interactiveEl,
         sideBySide,
+        Math.random,
+        performance.now(),
+        `${blastId}-`,
       );
-      if (spawned.length === 0) return;
+      if (!spawned) return;
 
-      cellsRef.current = [...cellsRef.current, ...spawned];
+      cellsRef.current = [...cellsRef.current, ...spawned.cells];
       setCells([...cellsRef.current]);
+      setMidlines((current) => [...current, spawned.midline]);
+
+      const timeoutId = window.setTimeout(() => {
+        setMidlines((current) => current.filter((line) => line.id !== spawned.midline.id));
+        timeoutsRef.current = timeoutsRef.current.filter((id) => id !== timeoutId);
+      }, MIDLINE_DURATION_MS + 30);
+      timeoutsRef.current.push(timeoutId);
+
       startLoop();
     },
     [interactiveGridRef, referenceGridRef, startLoop],
   );
 
-  return { cells, spawn };
+  return { cells, midlines, spawn };
 }
