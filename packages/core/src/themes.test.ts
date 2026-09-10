@@ -4,15 +4,16 @@ import { getThemeTokens } from "./themes.js";
 describe("themes", () => {
   it("returns tokens for dark yellow", () => {
     const t = getThemeTokens("yellow", "dark");
-    expect(t.accent).toBe("#f5c518");
+    expect(t.accent).toBe("#ffff28");
     expect(t.bg).toBe("#1a1a1e");
     expect(t.cellOn).toBe(t.accent);
-    expect(t.bgFlash).toBe("#88701b");
+    expect(t.cellOnBright).toBe("#ffffa9");
+    expect(t.bgFlash).toBe("#8d8d23");
   });
 
   it("flash color is average of accent and background", () => {
     const light = getThemeTokens("yellow", "light");
-    expect(light.bgFlash).toBe("#f5dd88");
+    expect(light.bgFlash).toBe("#fafa90");
   });
 
   it("returns tokens for light cyan", () => {
@@ -25,6 +26,8 @@ describe("themes", () => {
     for (const theme of ["yellow", "cyan", "magenta", "green", "orange"] as const) {
       const t = getThemeTokens(theme, "dark");
       expect(t.accent).toMatch(/^#/);
+      expect(t.cellOnBright).toMatch(/^#/);
+      expect(t.cellOnBright).not.toBe(t.cellOn);
     }
   });
 });

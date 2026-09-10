@@ -21,12 +21,10 @@ export type GameState = {
   interactive: Grid;
   score: number;
   timeRemainingMs: number;
-  flashPhase: "none" | "on" | "fade";
-  flashElapsedMs: number;
 };
 
 export type GameEvent =
-  | { type: "SCORED"; score: number }
+  | { type: "SCORED"; score: number; matchedReference: Grid; matchedInteractive: Grid }
   | { type: "GAME_OVER"; score: number; isHighScore: boolean };
 
 export type HighScoreStore = Record<string, number>;

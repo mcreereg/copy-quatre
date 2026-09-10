@@ -3,9 +3,6 @@ import { generatePattern } from "./pattern/index.js";
 import type { Rng } from "./rng.js";
 import type { GameEvent, GameState, Grid, Settings } from "./types.js";
 
-export const FLASH_ON_MS = 250;
-export const FLASH_FADE_MS = 250;
-
 export type GameAction =
   | { type: "START"; settings: Settings }
   | { type: "TICK"; dtMs: number }
@@ -41,8 +38,6 @@ function createInitialState(): GameState {
     interactive: allOff(4),
     score: 0,
     timeRemainingMs: 0,
-    flashPhase: "none",
-    flashElapsedMs: 0,
   };
 }
 
@@ -73,8 +68,6 @@ function startGame(settings: Settings, rng: Rng): { state: GameState; nextRefere
       interactive: allOff(settings.gridSize),
       score: 0,
       timeRemainingMs: settings.timeLimitSec * 1000,
-      flashPhase: "none",
-      flashElapsedMs: 0,
     },
     nextReference: pregenerateNextReference(settings, reference, rng),
   };
@@ -157,17 +150,6 @@ export function createGameEngine(rng: Rng): GameEngine {
       }
     }
 
-    if (state.flashPhase !== "none") {
-      const elapsed = state.flashElapsedMs + dtMs;
-      if (state.flashPhase === "on" && elapsed >= FLASH_ON_MS) {
-        state = { ...state, flashPhase: "fade", flashElapsedMs: 0 };
-      } else if (state.flashPhase === "fade" && elapsed >= FLASH_FADE_MS) {
-        state = { ...state, flashPhase: "none", flashElapsedMs: 0 };
-      } else {
-        state = { ...state, flashElapsedMs: elapsed };
-      }
-    }
-
     return events;
   }
 
@@ -198,6 +180,8 @@ export function createGameEngine(rng: Rng): GameEngine {
   function checkMatch(events: GameEvent[]): void {
     if (!gridsEqual(state.reference, state.interactive)) return;
 
+    const matchedReference = state.reference;
+    const matchedInteractive = state.interactive;
     const newScore = state.score + 1;
     const reference =
       nextReference ??
@@ -209,19 +193,16 @@ export function createGameEngine(rng: Rng): GameEngine {
       score: newScore,
       reference,
       interactive: allOff(state.settings.gridSize),
-      flashPhase: "on",
-      flashElapsedMs: 0,
     };
     stroke = createStroke();
 
-    events.push({ type: "SCORED", score: newScore });
+    events.push({
+      type: "SCORED",
+      score: newScore,
+      matchedReference,
+      matchedInteractive,
+    });
   }
 
   return { getState, dispatch };
-}
-
-export function getFlashOpacity(state: GameState): number {
-  if (state.flashPhase === "none") return 0;
-  if (state.flashPhase === "on") return 1;
-  return 1 - state.flashElapsedMs / FLASH_FADE_MS;
 }

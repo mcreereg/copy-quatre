@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { allOff, gridsEqual } from "./grid.js";
-import {
-  createGameEngine,
-  FLASH_FADE_MS,
-  FLASH_ON_MS,
-  getFlashOpacity,
-} from "./gameEngine.js";
+import { createGameEngine } from "./gameEngine.js";
 import { createRng } from "./rng.js";
 import { DEFAULT_SETTINGS } from "./settings.js";
 
@@ -120,7 +115,11 @@ describe("gameEngine", () => {
         }
       }
     }
-    expect(lastEvents.some((e) => e.type === "SCORED")).toBe(true);
+    const scored = lastEvents.find((e) => e.type === "SCORED");
+    expect(scored).toBeDefined();
+    if (scored?.type !== "SCORED") return;
+    expect(gridsEqual(scored.matchedReference, ref)).toBe(true);
+    expect(gridsEqual(scored.matchedInteractive, ref)).toBe(true);
   });
 
   it("scores on match and resets interactive", () => {
@@ -137,7 +136,6 @@ describe("gameEngine", () => {
     const state = engine.getState();
     expect(state.score).toBe(1);
     expect(state.interactive.every((row) => row.every((cell) => !cell))).toBe(true);
-    expect(state.flashPhase).toBe("on");
   });
 
   it("does not score on partial match", () => {
@@ -145,27 +143,6 @@ describe("gameEngine", () => {
     engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
     engine.dispatch({ type: "POINTER_DOWN", row: 0, col: 0 });
     expect(engine.getState().score).toBe(0);
-  });
-
-  it("flash opacity transitions", () => {
-    const engine = createGameEngine(createRng(100));
-    engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
-    const ref = engine.getState().reference;
-    for (let r = 0; r < ref.length; r++) {
-      for (let c = 0; c < ref[r].length; c++) {
-        if (ref[r][c]) {
-          engine.dispatch({ type: "POINTER_DOWN", row: r, col: c });
-        }
-      }
-    }
-    expect(getFlashOpacity(engine.getState())).toBe(1);
-    engine.dispatch({ type: "TICK", dtMs: FLASH_ON_MS });
-    expect(engine.getState().flashPhase).toBe("fade");
-    engine.dispatch({ type: "TICK", dtMs: FLASH_FADE_MS / 2 });
-    expect(getFlashOpacity(engine.getState())).toBeCloseTo(0.5);
-    engine.dispatch({ type: "TICK", dtMs: FLASH_FADE_MS / 2 });
-    expect(engine.getState().flashPhase).toBe("none");
-    expect(getFlashOpacity(engine.getState())).toBe(0);
   });
 
   it("ignores input when paused", () => {
@@ -200,7 +177,7 @@ describe("gameEngine", () => {
     expect(engine.getState().interactive[0][1]).toBe(false);
   });
 
-  it("game continues during flash", () => {
+  it("game continues after score", () => {
     const engine = createGameEngine(createRng(100));
     engine.dispatch({ type: "START", settings: DEFAULT_SETTINGS });
     const ref = engine.getState().reference;

@@ -1,4 +1,4 @@
-import { allOff, type GameState } from "@copy-quatre/core";
+import { allOff, type GameEvent, type GameState } from "@copy-quatre/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -18,10 +18,12 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     interactive: allOff(4),
     score: 0,
     timeRemainingMs: 90000,
-    flashPhase: "none",
-    flashElapsedMs: 0,
     ...overrides,
   };
+}
+
+function makeDispatch(events: GameEvent[] = []) {
+  return vi.fn(() => events);
 }
 
 describe("PlayScreen", () => {
@@ -32,9 +34,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState({ phase: "paused" })}
-        onPointerDown={vi.fn()}
-        onPointerEnter={vi.fn()}
-        onPointerUp={vi.fn()}
+        dispatch={makeDispatch()}
         onPause={vi.fn()}
         onResume={onResume}
         onQuit={vi.fn()}
@@ -56,9 +56,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState()}
-        onPointerDown={vi.fn()}
-        onPointerEnter={vi.fn()}
-        onPointerUp={vi.fn()}
+        dispatch={makeDispatch()}
         onPause={vi.fn()}
         onResume={vi.fn()}
         onQuit={onQuit}
@@ -75,26 +73,17 @@ describe("PlayScreen", () => {
     expect(onQuit).toHaveBeenCalledOnce();
   });
 
-  it("does not nest flash overlay over grids", () => {
+  it("mounts explode layer container when playing", () => {
     const { container } = render(
       <PlayScreen
-        state={makeState({ flashPhase: "on" })}
-        onPointerDown={vi.fn()}
-        onPointerEnter={vi.fn()}
-        onPointerUp={vi.fn()}
+        state={makeState()}
+        dispatch={makeDispatch()}
         onPause={vi.fn()}
         onResume={vi.fn()}
         onQuit={vi.fn()}
       />,
     );
 
-    const overlay = container.querySelector(".flash-overlay");
-    const grids = container.querySelectorAll(".grid");
-
-    expect(overlay).not.toBeNull();
-    expect(grids).toHaveLength(2);
-    for (const grid of grids) {
-      expect(overlay?.contains(grid)).toBe(false);
-    }
+    expect(container.querySelector(".explode-layer")).toBeNull();
   });
 });

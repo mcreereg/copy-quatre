@@ -38,6 +38,34 @@ pnpm patgen:cli --help
 pnpm patgen:cli --algorithm morphology-mix --count 4 --grid-size 8
 ```
 
+## Versioning
+
+App version lives in `packages/web/package.json`. `packages/core/package.json` must stay in lockstep — web is canonical (CI, Android release, GitHub releases all read from web).
+
+Every PR must bump semver at least one patch. CI runs `version:check` and rejects invalid or mismatched versions.
+
+**Bump both packages:**
+
+```bash
+pnpm version:bump patch   # or minor, major
+```
+
+**Manual bump:** edit `packages/web/package.json`, then sync core:
+
+```bash
+pnpm version:sync
+```
+
+**Verify locally** (optional; same check CI runs):
+
+```bash
+pnpm version:check
+```
+
+Semver rules: patch increments the third number; minor bumps reset patch to 0; major bumps reset minor and patch to 0.
+
+`packages/patgen` is dev-only and not part of app versioning.
+
 ## Android (Capacitor)
 
 Native shell is committed at `packages/web/android/`. After web changes, sync the bundle, then build an APK.
