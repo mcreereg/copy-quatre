@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { density, hasAnyOn } from "../grid.js";
-import { PATTERN_ALGORITHMS, getAlgorithm, runPatgenBatch } from "./patgen.js";
+import {
+  PATTERN_ALGORITHMS,
+  RANDOM_PATGEN_SEED,
+  getAlgorithm,
+  resolvePatgenSeed,
+  runPatgenBatch,
+} from "./patgen.js";
 import { countComponents } from "./shared/components.js";
 
 describe("patgen registry", () => {
@@ -12,6 +18,17 @@ describe("patgen registry", () => {
   it("looks up algorithms by id", () => {
     expect(getAlgorithm("legacy-cohesive")?.name).toMatch(/legacy/i);
     expect(getAlgorithm("missing")).toBeUndefined();
+  });
+
+  it("throws for unknown algorithm ids", () => {
+    expect(() =>
+      runPatgenBatch({
+        algorithmId: "missing",
+        gridSize: 4,
+        count: 1,
+        seed: 1,
+      }),
+    ).toThrow(RangeError);
   });
 
   it("generates reproducible batches", () => {
@@ -27,14 +44,33 @@ describe("patgen registry", () => {
       count: 4,
       seed: 99,
     });
-    expect(a).toEqual(b);
+    expect(a.grids).toEqual(b.grids);
+    expect(a.seed).toBe(99);
+  });
+
+  it("resolves random seed sentinel", () => {
+    expect(resolvePatgenSeed(42)).toBe(42);
+    const random = resolvePatgenSeed(RANDOM_PATGEN_SEED);
+    expect(random).toBeGreaterThanOrEqual(0);
+    expect(random).toBeLessThan(999_999_999);
+  });
+
+  it("uses a resolved seed for random batches", () => {
+    const result = runPatgenBatch({
+      algorithmId: "morphology-mix",
+      gridSize: 6,
+      count: 2,
+      seed: RANDOM_PATGEN_SEED,
+    });
+    expect(result.seed).toBeGreaterThanOrEqual(0);
+    expect(result.grids).toHaveLength(2);
   });
 });
 
 describe("patgen algorithms", () => {
   for (const algo of PATTERN_ALGORITHMS) {
     it(`${algo.id} produces valid patterns`, () => {
-      const grids = runPatgenBatch({
+      const { grids } = runPatgenBatch({
         algorithmId: algo.id,
         gridSize: 8,
         count: 5,

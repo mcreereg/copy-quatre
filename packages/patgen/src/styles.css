@@ -124,6 +124,13 @@ body {
   padding: 2rem;
 }
 
+.seed-display {
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .pattern-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

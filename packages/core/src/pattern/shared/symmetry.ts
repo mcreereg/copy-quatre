@@ -12,12 +12,6 @@ export const DEFAULT_SYMMETRY_WEIGHTS: Array<{ sym: Symmetry; weight: number }> 
   { sym: "none", weight: 35 },
 ];
 
-export const STRINGY_SYMMETRY_WEIGHTS: Array<{ sym: Symmetry; weight: number }> = [
-  { sym: "none", weight: 60 },
-  { sym: "h", weight: 20 },
-  { sym: "v", weight: 20 },
-];
-
 export function pickSymmetry(
   rng: Rng,
   weights: Array<{ sym: Symmetry; weight: number }> = DEFAULT_SYMMETRY_WEIGHTS,

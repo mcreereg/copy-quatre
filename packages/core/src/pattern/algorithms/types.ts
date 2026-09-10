@@ -44,25 +44,9 @@ export function paramNumber(params: AlgorithmParams, key: string): number {
   return value;
 }
 
-export function paramBoolean(params: AlgorithmParams, key: string): boolean {
-  const value = params[key];
-  if (typeof value !== "boolean") {
-    throw new TypeError(`Expected boolean param "${key}", got ${typeof value}`);
-  }
-  return value;
-}
-
 /** Append a typical-value hint to a param tooltip / help string. */
 export function desc(text: string, typical: string): string {
   return `${text} Typical: ${typical}.`;
-}
-
-export function paramNumberArray(params: AlgorithmParams, key: string): number[] {
-  const value = params[key];
-  if (!Array.isArray(value) || value.some((v) => typeof v !== "number")) {
-    throw new TypeError(`Expected number[] param "${key}"`);
-  }
-  return value;
 }
 
 export const DENSITY_PARAMS: ParamDef[] = [

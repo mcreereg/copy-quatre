@@ -29,7 +29,7 @@ describe("PlayScreen", () => {
     const user = userEvent.setup();
     const onResume = vi.fn();
 
-    render(
+    const { container } = render(
       <PlayScreen
         state={makeState({ phase: "paused" })}
         onPointerDown={vi.fn()}
@@ -43,7 +43,9 @@ describe("PlayScreen", () => {
 
     expect(screen.queryByRole("button", { name: "Pause" })).toBeNull();
     expect(screen.getByRole("button", { name: "Quit" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Resume" }));
+    expect(screen.getAllByRole("button", { name: "Resume" })).toHaveLength(2);
+    expect(container.querySelectorAll(".grid")).toHaveLength(0);
+    await user.click(screen.getAllByRole("button", { name: "Resume" })[0]);
     expect(onResume).toHaveBeenCalledOnce();
   });
 

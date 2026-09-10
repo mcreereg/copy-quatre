@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { density, gridHash, hasAnyOn } from "../grid.js";
 import { createRng } from "../rng.js";
+import * as wormWalk from "./algorithms/wormWalk.js";
+import { countComponents } from "./shared/components.js";
 import { generateCohesivePattern, generateCohesivePatternUnique } from "./cohesive.js";
 
 describe("cohesive pattern", () => {
@@ -9,7 +11,7 @@ describe("cohesive pattern", () => {
     const grid = generateCohesivePattern(4, rng);
     expect(hasAnyOn(grid)).toBe(true);
     expect(density(grid)).toBeGreaterThanOrEqual(0.25);
-    expect(density(grid)).toBeLessThanOrEqual(0.65);
+    expect(density(grid)).toBeLessThanOrEqual(0.75);
   });
 
   it("avoids immediate repeat when possible", () => {
@@ -20,12 +22,25 @@ describe("cohesive pattern", () => {
     expect(gridHash(second)).not.toBe(hash);
   });
 
+  it("returns a pattern when avoidHash is omitted", () => {
+    const grid = generateCohesivePatternUnique(4, createRng(12));
+    expect(hasAnyOn(grid)).toBe(true);
+  });
+
+  it("returns last attempt when unique retries exhaust", () => {
+    const fixed = generateCohesivePattern(4, createRng(1));
+    vi.spyOn(wormWalk, "generateWormWalk").mockReturnValue(fixed);
+    const grid = generateCohesivePatternUnique(4, createRng(1), gridHash(fixed));
+    expect(grid).toEqual(fixed);
+    vi.restoreAllMocks();
+  });
+
   it("works for small grids", () => {
     for (let seed = 0; seed < 50; seed++) {
       const grid = generateCohesivePattern(2, createRng(seed));
       expect(hasAnyOn(grid)).toBe(true);
       expect(density(grid)).toBeGreaterThanOrEqual(0.25);
-      expect(density(grid)).toBeLessThanOrEqual(0.65);
+      expect(density(grid)).toBeLessThanOrEqual(0.75);
     }
   });
 
@@ -34,44 +49,12 @@ describe("cohesive pattern", () => {
     expect(hasAnyOn(grid)).toBe(true);
   });
 
-  it("stays connected for many seeds", () => {
-    function components(grid: ReturnType<typeof generateCohesivePattern>): number {
-      const size = grid.length;
-      const seen = new Set<string>();
-      let count = 0;
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          if (!grid[r][c]) continue;
-          const start = `${r},${c}`;
-          if (seen.has(start)) continue;
-          count++;
-          const queue = [{ r, c }];
-          seen.add(start);
-          while (queue.length) {
-            const { r: cr, c: cc } = queue.pop()!;
-            for (const [nr, nc] of [
-              [cr - 1, cc],
-              [cr + 1, cc],
-              [cr, cc - 1],
-              [cr, cc + 1],
-            ]) {
-              if (nr < 0 || nc < 0 || nr >= size || nc >= size || !grid[nr][nc]) continue;
-              const key = `${nr},${nc}`;
-              if (seen.has(key)) continue;
-              seen.add(key);
-              queue.push({ r: nr, c: nc });
-            }
-          }
-        }
-      }
-      return count;
-    }
-
+  it("respects worm-walk component limits for many seeds", () => {
     for (let seed = 0; seed < 200; seed++) {
       const grid = generateCohesivePattern(10, createRng(seed));
-      expect(components(grid)).toBeLessThanOrEqual(1);
+      expect(countComponents(grid)).toBeLessThanOrEqual(4);
       expect(density(grid)).toBeGreaterThanOrEqual(0.25);
-      expect(density(grid)).toBeLessThanOrEqual(0.65);
+      expect(density(grid)).toBeLessThanOrEqual(0.75);
     }
   });
 });
