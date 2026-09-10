@@ -10,15 +10,39 @@ type GridProps = {
   onPointerUp?: () => void;
 };
 
-function cellFromPoint(clientX: number, clientY: number, gridEl: HTMLElement | null) {
+function cellFromCoordinates(
+  clientX: number,
+  clientY: number,
+  gridEl: HTMLElement | null,
+  size: number,
+) {
   if (!gridEl) return null;
-  const target = document.elementFromPoint(clientX, clientY);
-  const cell = target?.closest("[data-cell]") as HTMLElement | null;
-  if (!cell || !gridEl.contains(cell)) return null;
-  const row = Number(cell.dataset.row);
-  const col = Number(cell.dataset.col);
-  if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
+
+  const rect = gridEl.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+
+  const x = Math.min(rect.right, Math.max(rect.left, clientX));
+  const y = Math.min(rect.bottom, Math.max(rect.top, clientY));
+  const col = Math.min(size - 1, Math.max(0, Math.floor(((x - rect.left) / rect.width) * size)));
+  const row = Math.min(size - 1, Math.max(0, Math.floor(((y - rect.top) / rect.height) * size)));
   return { row, col };
+}
+
+function cellFromPoint(
+  clientX: number,
+  clientY: number,
+  gridEl: HTMLElement | null,
+  size: number,
+) {
+  const target = document.elementFromPoint?.(clientX, clientY);
+  const cell = target?.closest("[data-cell]") as HTMLElement | null;
+  if (cell && gridEl?.contains(cell)) {
+    const row = Number(cell.dataset.row);
+    const col = Number(cell.dataset.col);
+    if (Number.isInteger(row) && Number.isInteger(col)) return { row, col };
+  }
+
+  return cellFromCoordinates(clientX, clientY, gridEl, size);
 }
 
 export function Grid({
@@ -32,20 +56,33 @@ export function Grid({
   const size = grid.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  const pendingOutsideCell = useRef<{ row: number; col: number } | null>(null);
 
   const endStroke = useCallback(() => {
     if (!interactive || !dragging.current) return;
     dragging.current = false;
+    pendingOutsideCell.current = null;
     onPointerUp?.();
   }, [interactive, onPointerUp]);
 
   const handlePointerMove = useCallback(
     (event: PointerEvent) => {
       if (!interactive || !dragging.current) return;
-      const cell = cellFromPoint(event.clientX, event.clientY, gridRef.current);
-      if (cell) onPointerEnter?.(cell.row, cell.col);
+      const cell = cellFromCoordinates(event.clientX, event.clientY, gridRef.current, size);
+      if (!cell) return;
+
+      const pending = pendingOutsideCell.current;
+      if (pending) {
+        if (cell.row === pending.row && cell.col === pending.col) {
+          pendingOutsideCell.current = null;
+          onPointerDown?.(cell.row, cell.col);
+        }
+        return;
+      }
+
+      onPointerEnter?.(cell.row, cell.col);
     },
-    [interactive, onPointerEnter],
+    [interactive, onPointerDown, onPointerEnter, size],
   );
 
   useEffect(() => {
@@ -67,6 +104,25 @@ export function Grid({
         ref={gridRef}
         className={`grid ${interactive ? "grid-interactive" : "grid-readonly"}`}
         style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
+        onPointerDown={(e) => {
+          if (!interactive) return;
+          e.preventDefault();
+          dragging.current = true;
+
+          const hitCell = (e.target as HTMLElement).closest("[data-cell]") as HTMLElement | null;
+          if (hitCell) {
+            pendingOutsideCell.current = null;
+            onPointerDown?.(Number(hitCell.dataset.row), Number(hitCell.dataset.col));
+            return;
+          }
+
+          const cell = cellFromPoint(e.clientX, e.clientY, gridRef.current, size);
+          if (!cell) {
+            dragging.current = false;
+            return;
+          }
+          pendingOutsideCell.current = cell;
+        }}
       >
         {grid.map((row, r) =>
           row.map((on, c) => (
@@ -76,12 +132,6 @@ export function Grid({
               data-row={r}
               data-col={c}
               className={`cell ${on ? "cell-on" : "cell-off"}`}
-              onPointerDown={(e) => {
-                if (!interactive) return;
-                e.preventDefault();
-                dragging.current = true;
-                onPointerDown?.(r, c);
-              }}
             />
           )),
         )}

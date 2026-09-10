@@ -18,7 +18,7 @@ export function HighScoresScreen({ store, settings, onBack }: HighScoresScreenPr
   return (
     <div className="screen high-scores-screen">
       <h2>High Scores</h2>
-      <ul className="score-list">
+      <ul className="score-list score-list-scroll">
         {scores.map((entry) => (
           <li key={entry.key} className="score-item">
             <span className="score-value">{entry.score}</span>
@@ -29,7 +29,9 @@ export function HighScoresScreen({ store, settings, onBack }: HighScoresScreenPr
           </li>
         ))}
       </ul>
-      <Button onClick={onBack}>Back</Button>
+      <div className="high-scores-footer">
+        <Button onClick={onBack}>Back</Button>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { allOff, gridHash, gridsEqual, setCell, toggleCell } from "./grid.js";
 import { generatePattern } from "./pattern/index.js";
 import type { Rng } from "./rng.js";
-import type { GameEvent, GameState, Settings } from "./types.js";
+import type { GameEvent, GameState, Grid, Settings } from "./types.js";
 
 export const FLASH_ON_MS = 250;
 export const FLASH_FADE_MS = 250;
@@ -54,23 +54,36 @@ function cellKey(row: number, col: number): string {
   return `${row},${col}`;
 }
 
-function startGame(settings: Settings, rng: Rng): GameState {
+function pregenerateNextReference(settings: Settings, current: Grid, rng: Rng): Grid {
+  return generatePattern(
+    settings.patternStyle,
+    settings.gridSize,
+    rng,
+    gridHash(current),
+  );
+}
+
+function startGame(settings: Settings, rng: Rng): { state: GameState; nextReference: Grid } {
   const reference = generatePattern(settings.patternStyle, settings.gridSize, rng);
   return {
-    phase: "playing",
-    settings,
-    reference,
-    interactive: allOff(settings.gridSize),
-    score: 0,
-    timeRemainingMs: settings.timeLimitSec * 1000,
-    flashPhase: "none",
-    flashElapsedMs: 0,
+    state: {
+      phase: "playing",
+      settings,
+      reference,
+      interactive: allOff(settings.gridSize),
+      score: 0,
+      timeRemainingMs: settings.timeLimitSec * 1000,
+      flashPhase: "none",
+      flashElapsedMs: 0,
+    },
+    nextReference: pregenerateNextReference(settings, reference, rng),
   };
 }
 
 export function createGameEngine(rng: Rng): GameEngine {
   let state: GameState = createInitialState();
   let stroke: StrokeState = createStroke();
+  let nextReference: Grid | null = null;
 
   function getState(): GameState {
     return state;
@@ -80,10 +93,13 @@ export function createGameEngine(rng: Rng): GameEngine {
     const events: GameEvent[] = [];
 
     switch (action.type) {
-      case "START":
-        state = startGame(action.settings, rng);
+      case "START": {
+        const started = startGame(action.settings, rng);
+        state = started.state;
+        nextReference = started.nextReference;
         stroke = createStroke();
         break;
+      }
 
       case "TICK":
         events.push(...tick(action.dtMs));
@@ -183,13 +199,10 @@ export function createGameEngine(rng: Rng): GameEngine {
     if (!gridsEqual(state.reference, state.interactive)) return;
 
     const newScore = state.score + 1;
-    const prevHash = gridHash(state.reference);
-    const reference = generatePattern(
-      state.settings.patternStyle,
-      state.settings.gridSize,
-      rng,
-      prevHash,
-    );
+    const reference =
+      nextReference ??
+      pregenerateNextReference(state.settings, state.reference, rng);
+    nextReference = pregenerateNextReference(state.settings, reference, rng);
 
     state = {
       ...state,
