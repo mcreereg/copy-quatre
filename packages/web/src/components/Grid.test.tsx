@@ -192,6 +192,25 @@ describe("Grid", () => {
     expect(container.querySelector(".cell-extinguish")).toBeNull();
   });
 
+  it("applies cell-shake class and CSS vars when shake spec provided", () => {
+    const grid = allOff(2);
+    const shakeSpecs = new Map([
+      [
+        "0-0",
+        { delayMs: 12, dx: 2.5, dy: -0.4, rotDeg: 1.2 },
+      ],
+    ]);
+
+    const { container } = render(<Grid grid={grid} shakeSpecs={shakeSpecs} />);
+    const first = container.querySelector("[data-cell]") as HTMLElement;
+
+    expect(first).toHaveClass("cell-shake");
+    expect(first.style.getPropertyValue("--shake-x")).toBe("2.5px");
+    expect(first.style.getPropertyValue("--shake-y")).toBe("-0.4px");
+    expect(first.style.getPropertyValue("--shake-rot")).toBe("1.2deg");
+    expect(first.style.getPropertyValue("--shake-delay")).toBe("12ms");
+  });
+
   it("cancels extinguish when cell turns back on", () => {
     vi.useFakeTimers();
     const on = allOff(2);

@@ -1,6 +1,11 @@
 import type { Grid } from "@copy-quatre/core";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
+  buildGridShake,
+  shakeClearDelayMs,
+  type GridShakeMaps,
+} from "../components/gridShake.js";
+import {
   buildExplosion,
   GRIDS_SIDE_BY_SIDE_QUERY,
   MIDLINE_DURATION_MS,
@@ -17,6 +22,7 @@ export function useExplodeAnimation(
 ) {
   const [cells, setCells] = useState<FlyingCell[]>([]);
   const [midlines, setMidlines] = useState<MidlineBlast[]>([]);
+  const [shakes, setShakes] = useState<GridShakeMaps | null>(null);
   const cellsRef = useRef<FlyingCell[]>([]);
   const rafRef = useRef(0);
   const lastFrameRef = useRef(0);
@@ -79,13 +85,23 @@ export function useExplodeAnimation(
 
       const sideBySide = window.matchMedia(GRIDS_SIDE_BY_SIDE_QUERY).matches;
       const blastId = nextBlastId++;
+      const rng = Math.random;
+
+      setShakes(buildGridShake(referenceEl, interactiveEl, sideBySide, rng));
+
+      const shakeTimeoutId = window.setTimeout(() => {
+        setShakes(null);
+        timeoutsRef.current = timeoutsRef.current.filter((id) => id !== shakeTimeoutId);
+      }, shakeClearDelayMs());
+      timeoutsRef.current.push(shakeTimeoutId);
+
       const spawned = buildExplosion(
         matchedReference,
         matchedInteractive,
         referenceEl,
         interactiveEl,
         sideBySide,
-        Math.random,
+        rng,
         performance.now(),
         `${blastId}-`,
       );
@@ -95,16 +111,16 @@ export function useExplodeAnimation(
       setCells([...cellsRef.current]);
       setMidlines((current) => [...current, spawned.midline]);
 
-      const timeoutId = window.setTimeout(() => {
+      const midlineTimeoutId = window.setTimeout(() => {
         setMidlines((current) => current.filter((line) => line.id !== spawned.midline.id));
-        timeoutsRef.current = timeoutsRef.current.filter((id) => id !== timeoutId);
+        timeoutsRef.current = timeoutsRef.current.filter((id) => id !== midlineTimeoutId);
       }, MIDLINE_DURATION_MS + 30);
-      timeoutsRef.current.push(timeoutId);
+      timeoutsRef.current.push(midlineTimeoutId);
 
       startLoop();
     },
     [interactiveGridRef, referenceGridRef, startLoop],
   );
 
-  return { cells, midlines, spawn };
+  return { cells, midlines, shakes, spawn };
 }

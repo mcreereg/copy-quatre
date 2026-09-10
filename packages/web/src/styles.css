@@ -330,6 +330,36 @@ body {
   }
 }
 
+.cell-shake {
+  animation: cell-shake var(--shake-duration, 450ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--shake-delay, 0ms) both;
+}
+
+@keyframes cell-shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  10%,
+  18% {
+    transform: translate(var(--shake-x, 0), var(--shake-y, 0)) rotate(var(--shake-rot, 0deg));
+  }
+  32% {
+    transform: translate(
+        calc(var(--shake-x, 0) * -0.75),
+        calc(var(--shake-y, 0) * -0.75)
+      )
+      rotate(calc(var(--shake-rot, 0deg) * -0.55));
+  }
+  50% {
+    transform: translate(
+        calc(var(--shake-x, 0) * 0.35),
+        calc(var(--shake-y, 0) * 0.35)
+      )
+      rotate(calc(var(--shake-rot, 0deg) * 0.28));
+  }
+}
+
 .explode-layer {
   position: fixed;
   inset: 0;

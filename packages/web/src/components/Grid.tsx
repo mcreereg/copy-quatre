@@ -1,12 +1,14 @@
 import type { Grid as GridType } from "@copy-quatre/core";
-import { useCallback, useEffect, useRef, type Ref } from "react";
+import { useCallback, useEffect, useRef, type CSSProperties, type Ref } from "react";
 import { cellIgniteKey, useCellToggleAnims } from "./cellIgnite.js";
+import { SHAKE_DURATION_MS, type CellShakeSpec } from "./gridShake.js";
 
 type GridProps = {
   grid: GridType;
   interactive?: boolean;
   label?: string;
   gridRef?: Ref<HTMLDivElement>;
+  shakeSpecs?: ReadonlyMap<string, CellShakeSpec>;
   onPointerDown?: (row: number, col: number) => void;
   onPointerEnter?: (row: number, col: number) => void;
   onPointerUp?: () => void;
@@ -52,10 +54,22 @@ function cellClassName(
   key: string,
   igniteKeys: ReadonlySet<string>,
   extinguishKeys: ReadonlySet<string>,
+  shaking: boolean,
 ): string {
   const ignite = on && igniteKeys.has(key);
   const extinguish = !on && extinguishKeys.has(key);
-  return `cell ${on ? "cell-on" : "cell-off"}${ignite ? " cell-ignite" : ""}${extinguish ? " cell-extinguish" : ""}`;
+  return `cell ${on ? "cell-on" : "cell-off"}${ignite ? " cell-ignite" : ""}${extinguish ? " cell-extinguish" : ""}${shaking ? " cell-shake" : ""}`;
+}
+
+function cellShakeStyle(spec: CellShakeSpec | undefined): CSSProperties | undefined {
+  if (!spec) return undefined;
+  return {
+    "--shake-x": `${spec.dx}px`,
+    "--shake-y": `${spec.dy}px`,
+    "--shake-rot": `${spec.rotDeg}deg`,
+    "--shake-delay": `${spec.delayMs}ms`,
+    "--shake-duration": `${SHAKE_DURATION_MS}ms`,
+  } as CSSProperties;
 }
 
 export function Grid({
@@ -63,6 +77,7 @@ export function Grid({
   interactive = false,
   label,
   gridRef: externalGridRef,
+  shakeSpecs,
   onPointerDown,
   onPointerEnter,
   onPointerUp,
@@ -152,20 +167,20 @@ export function Grid({
         }}
       >
         {grid.map((row, r) =>
-          row.map((on, c) => (
-            <div
-              key={`${r}-${c}`}
-              data-cell
-              data-row={r}
-              data-col={c}
-              className={cellClassName(
-                on,
-                cellIgniteKey(r, c),
-                igniteKeys,
-                extinguishKeys,
-              )}
-            />
-          )),
+          row.map((on, c) => {
+            const key = cellIgniteKey(r, c);
+            const shake = shakeSpecs?.get(key);
+            return (
+              <div
+                key={key}
+                data-cell
+                data-row={r}
+                data-col={c}
+                className={cellClassName(on, key, igniteKeys, extinguishKeys, shake !== undefined)}
+                style={cellShakeStyle(shake)}
+              />
+            );
+          }),
         )}
       </div>
     </div>

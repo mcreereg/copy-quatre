@@ -45,7 +45,7 @@ export function PlayScreen({
   const paused = state.phase === "paused";
   const referenceGridRef = useRef<HTMLDivElement>(null);
   const interactiveGridRef = useRef<HTMLDivElement>(null);
-  const { cells, midlines, spawn } = useExplodeAnimation(
+  const { cells, midlines, shakes, spawn } = useExplodeAnimation(
     referenceGridRef,
     interactiveGridRef,
   );
@@ -100,12 +100,18 @@ export function PlayScreen({
 
       {!paused && (
         <div className="grids-container">
-          <Grid grid={state.reference} label="Copy this" gridRef={referenceGridRef} />
+          <Grid
+            grid={state.reference}
+            label="Copy this"
+            gridRef={referenceGridRef}
+            shakeSpecs={shakes?.ref}
+          />
           <Grid
             grid={state.interactive}
             interactive
             label="Your grid"
             gridRef={interactiveGridRef}
+            shakeSpecs={shakes?.int}
             onPointerDown={handlePointerDown}
             onPointerEnter={handlePointerEnter}
             onPointerUp={handlePointerUp}
