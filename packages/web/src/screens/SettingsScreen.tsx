@@ -76,6 +76,14 @@ export function SettingsScreen({
           </Button>
         </div>
         <div className="setting-row">
+          <span className="stepper-label">Vibration</span>
+          <SlideToggle
+            checked={settings.vibration}
+            onChange={(vibration) => onChange({ ...settings, vibration })}
+            label="Vibration"
+          />
+        </div>
+        <div className="setting-row">
           <span className="stepper-label">Animations</span>
           <div className="setting-row-controls">
             <SlideToggle

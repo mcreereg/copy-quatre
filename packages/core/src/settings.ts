@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   patternStyle: "cohesive",
   theme: "yellow",
   colorMode: "dark",
+  vibration: true,
   animations: DEFAULT_ANIMATION_SETTINGS,
 };
 
@@ -105,6 +106,7 @@ export function validateSettings(settings: Settings): Settings {
     patternStyle: pickEnum(settings.patternStyle, PATTERN_STYLES, DEFAULT_SETTINGS.patternStyle),
     theme: pickEnum(settings.theme, THEME_IDS, DEFAULT_SETTINGS.theme),
     colorMode: pickEnum(settings.colorMode, COLOR_MODES, DEFAULT_SETTINGS.colorMode),
+    vibration: pickBool(settings.vibration, DEFAULT_SETTINGS.vibration),
     animations: validateAnimationSettings(settings.animations),
   };
 }

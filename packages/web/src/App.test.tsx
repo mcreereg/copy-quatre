@@ -27,6 +27,7 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Vibration" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Animations" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("switch", { name: "Animations" }));

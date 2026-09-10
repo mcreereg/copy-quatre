@@ -58,6 +58,7 @@ describe("settings", () => {
     expect(DEFAULT_SETTINGS.timeLimitSec).toBe(90);
     expect(DEFAULT_SETTINGS.gridSize).toBe(4);
     expect(DEFAULT_SETTINGS.colorMode).toBe("dark");
+    expect(DEFAULT_SETTINGS.vibration).toBe(true);
     expect(DEFAULT_SETTINGS.animations).toEqual(DEFAULT_ANIMATION_SETTINGS);
   });
 
@@ -109,6 +110,14 @@ describe("settings", () => {
     expect(s.patternStyle).toBe("cohesive");
     expect(s.theme).toBe("yellow");
     expect(s.colorMode).toBe("dark");
+  });
+
+  it("falls back on invalid vibration field", () => {
+    const s = validateSettings({
+      ...DEFAULT_SETTINGS,
+      vibration: "yes" as unknown as boolean,
+    });
+    expect(s.vibration).toBe(true);
   });
 
   it("formats time", () => {

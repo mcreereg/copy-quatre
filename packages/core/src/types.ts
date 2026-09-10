@@ -19,6 +19,7 @@ export type Settings = {
   patternStyle: PatternStyle;
   theme: ThemeId;
   colorMode: ColorMode;
+  vibration: boolean;
   animations: AnimationSettings;
 };
 
