@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Ensures packages/web/package.json version was bumped correctly vs a base ref.
+ * Ensures packages/web and packages/core versions stay in lockstep and bump
+ * correctly vs a base ref. Web is canonical; core must match.
  *
  * Rules:
  * - Every change must increase semver by at least one patch.
@@ -12,109 +13,26 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import {
+  CORE_VERSION_FILE,
+  WEB_VERSION_FILE,
+  describeValidBumps,
+  isValidBump,
+  readPackageJson,
+  readVersionFromJson,
+} from './version-utils.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const versionFile = 'packages/web/package.json';
 
-function readVersionFromJson(jsonText) {
-  const version = JSON.parse(jsonText).version;
-  if (typeof version !== 'string') {
-    throw new Error(`${versionFile} is missing a string "version" field`);
-  }
-  return version;
-}
-
-function readWorkingTreeVersion() {
-  return readVersionFromJson(readFileSync(join(repoRoot, versionFile), 'utf8'));
-}
-
-function readGitRefVersion(ref) {
-  const jsonText = execFileSync('git', ['show', `${ref}:${versionFile}`], {
+function readGitRefVersion(filePath, ref) {
+  const jsonText = execFileSync('git', ['show', `${ref}:${filePath}`], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  return readVersionFromJson(jsonText);
-}
-
-function parseSemver(version) {
-  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
-  if (!match) {
-    throw new Error(`Invalid semver "${version}" in ${versionFile}; expected MAJOR.MINOR.PATCH`);
-  }
-  return {
-    major: Number(match[1]),
-    minor: Number(match[2]),
-    patch: Number(match[3]),
-  };
-}
-
-function compareSemver(a, b) {
-  for (const key of ['major', 'minor', 'patch']) {
-    if (a[key] !== b[key]) {
-      return a[key] - b[key];
-    }
-  }
-  return 0;
-}
-
-function describeValidBumps(baseVersion) {
-  const base = parseSemver(baseVersion);
-  return [
-    `${base.major}.${base.minor}.${base.patch + 1}`,
-    `${base.major}.${base.minor + 1}.0`,
-    `${base.major + 1}.0.0`,
-  ].join(', ');
-}
-
-function isValidBump(baseVersion, headVersion) {
-  const base = parseSemver(baseVersion);
-  const head = parseSemver(headVersion);
-
-  if (compareSemver(base, head) >= 0) {
-    return {
-      ok: false,
-      reason: `version must increase from ${baseVersion}; got ${headVersion}`,
-    };
-  }
-
-  if (head.major > base.major) {
-    if (head.minor !== 0 || head.patch !== 0) {
-      return {
-        ok: false,
-        reason: `major bump to ${headVersion} must reset minor and patch to 0`,
-      };
-    }
-    return { ok: true };
-  }
-
-  if (head.minor > base.minor) {
-    if (head.major !== base.major || head.patch !== 0) {
-      return {
-        ok: false,
-        reason: `minor bump to ${headVersion} must keep major ${base.major} and reset patch to 0`,
-      };
-    }
-    return { ok: true };
-  }
-
-  if (head.patch > base.patch) {
-    if (head.major !== base.major || head.minor !== base.minor) {
-      return {
-        ok: false,
-        reason: `patch bump to ${headVersion} must keep major.minor at ${base.major}.${base.minor}`,
-      };
-    }
-    return { ok: true };
-  }
-
-  return {
-    ok: false,
-    reason: `version ${headVersion} is not a valid semver increment from ${baseVersion}`,
-  };
+  return readVersionFromJson(jsonText, filePath);
 }
 
 function resolveBaseRef(requestedRef) {
@@ -132,25 +50,43 @@ function resolveBaseRef(requestedRef) {
 
 function main() {
   const baseRef = resolveBaseRef(process.argv[2]);
-  const headVersion = readWorkingTreeVersion();
+  const webVersion = readPackageJson(WEB_VERSION_FILE, repoRoot).version;
+  const coreVersion = readPackageJson(CORE_VERSION_FILE, repoRoot).version;
 
-  let baseVersion;
+  if (webVersion !== coreVersion) {
+    console.error(`Version mismatch: ${WEB_VERSION_FILE} is ${webVersion}, ${CORE_VERSION_FILE} is ${coreVersion}.`);
+    console.error('Run: pnpm version:sync');
+    process.exit(1);
+  }
+
+  let baseWebVersion;
+  let baseCoreVersion;
   try {
-    baseVersion = readGitRefVersion(baseRef);
+    baseWebVersion = readGitRefVersion(WEB_VERSION_FILE, baseRef);
+    baseCoreVersion = readGitRefVersion(CORE_VERSION_FILE, baseRef);
   } catch (error) {
-    console.error(`Failed to read ${versionFile} from ${baseRef}: ${error.message}`);
+    console.error(`Failed to read version files from ${baseRef}: ${error.message}`);
     process.exit(1);
   }
 
-  const result = isValidBump(baseVersion, headVersion);
+  if (baseWebVersion !== baseCoreVersion) {
+    console.error(
+      `Base ref ${baseRef} has mismatched versions: web=${baseWebVersion}, core=${baseCoreVersion}.`,
+    );
+    console.error('Fix main first, then bump both together.');
+    process.exit(1);
+  }
+
+  const result = isValidBump(baseWebVersion, webVersion);
   if (!result.ok) {
-    console.error(`Invalid version bump in ${versionFile}.`);
+    console.error(`Invalid version bump in ${WEB_VERSION_FILE} and ${CORE_VERSION_FILE}.`);
     console.error(result.reason);
-    console.error(`Valid next versions from ${baseVersion}: ${describeValidBumps(baseVersion)}`);
+    console.error(`Valid next versions from ${baseWebVersion}: ${describeValidBumps(baseWebVersion)}`);
+    console.error('Run: pnpm version:bump <patch|minor|major>');
     process.exit(1);
   }
 
-  console.log(`Version bump OK: ${baseVersion} -> ${headVersion}`);
+  console.log(`Version bump OK: ${baseWebVersion} -> ${webVersion} (web + core)`);
 }
 
 main();
