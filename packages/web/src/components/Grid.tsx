@@ -9,6 +9,8 @@ type GridProps = {
   label?: string;
   gridRef?: Ref<HTMLDivElement>;
   shakeSpecs?: ReadonlyMap<string, CellShakeSpec>;
+  cellOnBlink?: boolean;
+  cellOffBlink?: boolean;
   onPointerDown?: (row: number, col: number) => void;
   onPointerEnter?: (row: number, col: number) => void;
   onPointerUp?: () => void;
@@ -78,6 +80,8 @@ export function Grid({
   label,
   gridRef: externalGridRef,
   shakeSpecs,
+  cellOnBlink = true,
+  cellOffBlink = true,
   onPointerDown,
   onPointerEnter,
   onPointerUp,
@@ -85,7 +89,10 @@ export function Grid({
   const size = grid.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  const { igniteKeys, extinguishKeys } = useCellToggleAnims(grid, interactive);
+  const { igniteKeys, extinguishKeys } = useCellToggleAnims(grid, {
+    ignite: interactive && cellOnBlink,
+    extinguish: interactive && cellOffBlink,
+  });
 
   const setGridRef = useCallback(
     (node: HTMLDivElement | null) => {

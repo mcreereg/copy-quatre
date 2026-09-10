@@ -1,4 +1,20 @@
-import type { ColorMode, PatternStyle, Settings, ThemeId } from "./types.js";
+import type {
+  AnimationId,
+  AnimationSettings,
+  ColorMode,
+  PatternStyle,
+  Settings,
+  ThemeId,
+} from "./types.js";
+
+export const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {
+  enabled: true,
+  lineFlash: true,
+  flyingTiles: true,
+  rattlingTiles: true,
+  cellOnBlink: true,
+  cellOffBlink: true,
+};
 
 export const DEFAULT_SETTINGS: Settings = {
   timeLimitSec: 90,
@@ -6,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   patternStyle: "cohesive",
   theme: "yellow",
   colorMode: "dark",
+  animations: DEFAULT_ANIMATION_SETTINGS,
 };
 
 export const TIME_LIMIT_MIN = 30;
@@ -53,6 +70,28 @@ export function toggleColorMode(current: ColorMode): ColorMode {
   return current === "dark" ? "light" : "dark";
 }
 
+function pickBool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+export function validateAnimationSettings(raw: unknown): AnimationSettings {
+  const defaults = DEFAULT_ANIMATION_SETTINGS;
+  if (!raw || typeof raw !== "object") return { ...defaults };
+  const o = raw as Record<string, unknown>;
+  return {
+    enabled: pickBool(o.enabled, defaults.enabled),
+    lineFlash: pickBool(o.lineFlash, defaults.lineFlash),
+    flyingTiles: pickBool(o.flyingTiles, defaults.flyingTiles),
+    rattlingTiles: pickBool(o.rattlingTiles, defaults.rattlingTiles),
+    cellOnBlink: pickBool(o.cellOnBlink, defaults.cellOnBlink),
+    cellOffBlink: pickBool(o.cellOffBlink, defaults.cellOffBlink),
+  };
+}
+
+export function isAnimationActive(settings: Settings, id: AnimationId): boolean {
+  return settings.animations.enabled && settings.animations[id];
+}
+
 function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === "string" && (allowed as readonly string[]).includes(value)
     ? (value as T)
@@ -66,6 +105,7 @@ export function validateSettings(settings: Settings): Settings {
     patternStyle: pickEnum(settings.patternStyle, PATTERN_STYLES, DEFAULT_SETTINGS.patternStyle),
     theme: pickEnum(settings.theme, THEME_IDS, DEFAULT_SETTINGS.theme),
     colorMode: pickEnum(settings.colorMode, COLOR_MODES, DEFAULT_SETTINGS.colorMode),
+    animations: validateAnimationSettings(settings.animations),
   };
 }
 

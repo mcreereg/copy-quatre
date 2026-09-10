@@ -1,6 +1,11 @@
 import { allOff } from "@copy-quatre/core";
 import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  allAnimationSettingsCombinations,
+  expectedCellBlinkFlags,
+  formatAnimationSettingsLabel,
+} from "../test/animationMatrix.js";
 import { Grid } from "./Grid";
 
 function pointerDown(target: Element, clientX: number, clientY: number) {
@@ -226,5 +231,41 @@ describe("Grid", () => {
     expect(first).toHaveClass("cell-ignite");
     expect(first).not.toHaveClass("cell-extinguish");
     vi.useRealTimers();
+  });
+
+  it.each(
+    allAnimationSettingsCombinations().map((animations) => ({
+      animations,
+      label: formatAnimationSettingsLabel(animations),
+    })),
+  )("respects cell blink flags ($label)", ({ animations }) => {
+    const { cellOnBlink, cellOffBlink } = expectedCellBlinkFlags(animations);
+    const { container, rerender } = render(
+      <Grid grid={allOff(2)} interactive cellOnBlink={cellOnBlink} cellOffBlink={cellOffBlink} />,
+    );
+
+    const on = allOff(2);
+    on[0][0] = true;
+    rerender(
+      <Grid grid={on} interactive cellOnBlink={cellOnBlink} cellOffBlink={cellOffBlink} />,
+    );
+
+    const first = container.querySelector("[data-cell]") as HTMLElement;
+    expect(first).toHaveClass("cell-on");
+    if (cellOnBlink) {
+      expect(first).toHaveClass("cell-ignite");
+    } else {
+      expect(first).not.toHaveClass("cell-ignite");
+    }
+
+    rerender(
+      <Grid grid={allOff(2)} interactive cellOnBlink={cellOnBlink} cellOffBlink={cellOffBlink} />,
+    );
+    expect(first).toHaveClass("cell-off");
+    if (cellOffBlink) {
+      expect(first).toHaveClass("cell-extinguish");
+    } else {
+      expect(first).not.toHaveClass("cell-extinguish");
+    }
   });
 });

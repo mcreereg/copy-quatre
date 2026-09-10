@@ -125,6 +125,68 @@ body {
   align-items: center;
 }
 
+.setting-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.setting-row-controls .btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.settings-warning {
+  width: min(360px, 100%);
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  color: var(--textMuted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.slide-toggle {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.slide-toggle-on {
+  background: var(--accent);
+}
+
+.slide-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.slide-toggle-on .slide-toggle-thumb {
+  transform: translateX(22px);
+  background: var(--buttonText);
+}
+
+[data-animations="off"] .cell {
+  transition: none;
+}
+
+[data-animations="off"] .btn {
+  transition: none;
+}
+
 .score-list {
   list-style: none;
   width: min(400px, 100%);

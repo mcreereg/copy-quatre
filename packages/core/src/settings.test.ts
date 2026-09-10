@@ -1,22 +1,64 @@
 import { describe, expect, it } from "vitest";
+import type { AnimationId, AnimationSettings } from "./types.js";
 import {
   clampGridSize,
   clampTimeLimitSec,
   cyclePatternStyle,
   cycleTheme,
+  DEFAULT_ANIMATION_SETTINGS,
   DEFAULT_SETTINGS,
   formatTimeLimit,
+  isAnimationActive,
   stepGridSize,
   stepTimeLimitSec,
   toggleColorMode,
+  validateAnimationSettings,
   validateSettings,
 } from "./settings.js";
+
+const ANIMATION_IDS: AnimationId[] = [
+  "lineFlash",
+  "flyingTiles",
+  "rattlingTiles",
+  "cellOnBlink",
+  "cellOffBlink",
+];
+
+function allAnimationSettingsCombinations(): AnimationSettings[] {
+  const combos: AnimationSettings[] = [];
+  for (const enabled of [false, true]) {
+    for (const lineFlash of [false, true]) {
+      for (const flyingTiles of [false, true]) {
+        for (const rattlingTiles of [false, true]) {
+          for (const cellOnBlink of [false, true]) {
+            for (const cellOffBlink of [false, true]) {
+              combos.push({
+                enabled,
+                lineFlash,
+                flyingTiles,
+                rattlingTiles,
+                cellOnBlink,
+                cellOffBlink,
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  return combos;
+}
+
+function formatAnimationSettingsLabel(animations: AnimationSettings): string {
+  return `enabled=${animations.enabled},lineFlash=${animations.lineFlash},flyingTiles=${animations.flyingTiles},rattlingTiles=${animations.rattlingTiles},cellOnBlink=${animations.cellOnBlink},cellOffBlink=${animations.cellOffBlink}`;
+}
 
 describe("settings", () => {
   it("has sensible defaults", () => {
     expect(DEFAULT_SETTINGS.timeLimitSec).toBe(90);
     expect(DEFAULT_SETTINGS.gridSize).toBe(4);
     expect(DEFAULT_SETTINGS.colorMode).toBe("dark");
+    expect(DEFAULT_SETTINGS.animations).toEqual(DEFAULT_ANIMATION_SETTINGS);
   });
 
   it("clamps time limit to step", () => {
@@ -72,5 +114,32 @@ describe("settings", () => {
   it("formats time", () => {
     expect(formatTimeLimit(90)).toBe("1:30");
     expect(formatTimeLimit(30)).toBe("0:30");
+  });
+
+  it("validates animation settings", () => {
+    expect(validateAnimationSettings(undefined)).toEqual(DEFAULT_ANIMATION_SETTINGS);
+    expect(
+      validateAnimationSettings({
+        enabled: false,
+        lineFlash: false,
+        flyingTiles: "yes",
+      }),
+    ).toEqual({
+      ...DEFAULT_ANIMATION_SETTINGS,
+      enabled: false,
+      lineFlash: false,
+    });
+  });
+
+  it.each(
+    allAnimationSettingsCombinations().map((animations) => ({
+      animations,
+      label: formatAnimationSettingsLabel(animations),
+    })),
+  )("isAnimationActive for all combinations ($label)", ({ animations }) => {
+    const settings = { ...DEFAULT_SETTINGS, animations };
+    for (const id of ANIMATION_IDS) {
+      expect(isAnimationActive(settings, id)).toBe(animations.enabled && animations[id]);
+    }
   });
 });

@@ -1,4 +1,5 @@
 import {
+  isAnimationActive,
   type GameAction,
   type GameEvent,
   type GameState,
@@ -48,7 +49,10 @@ export function PlayScreen({
   const { cells, midlines, shakes, spawn } = useExplodeAnimation(
     referenceGridRef,
     interactiveGridRef,
+    state.settings.animations,
   );
+  const cellOnBlink = isAnimationActive(state.settings, "cellOnBlink");
+  const cellOffBlink = isAnimationActive(state.settings, "cellOffBlink");
 
   const handlePointerDown = useCallback(
     (row: number, col: number) => {
@@ -112,6 +116,8 @@ export function PlayScreen({
             label="Your grid"
             gridRef={interactiveGridRef}
             shakeSpecs={shakes?.int}
+            cellOnBlink={cellOnBlink}
+            cellOffBlink={cellOffBlink}
             onPointerDown={handlePointerDown}
             onPointerEnter={handlePointerEnter}
             onPointerUp={handlePointerUp}

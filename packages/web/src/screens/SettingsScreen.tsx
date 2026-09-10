@@ -8,15 +8,22 @@ import {
   type Settings,
 } from "@copy-quatre/core";
 import { Button } from "../components/Button";
+import { SlideToggle } from "../components/SlideToggle";
 import { Stepper } from "../components/Stepper";
 
 type SettingsScreenProps = {
   settings: Settings;
   onChange: (settings: Settings) => void;
+  onCustomizeAnimations: () => void;
   onBack: () => void;
 };
 
-export function SettingsScreen({ settings, onChange, onBack }: SettingsScreenProps) {
+export function SettingsScreen({
+  settings,
+  onChange,
+  onCustomizeAnimations,
+  onBack,
+}: SettingsScreenProps) {
   return (
     <div className="screen settings-screen">
       <h2>Settings</h2>
@@ -67,6 +74,24 @@ export function SettingsScreen({ settings, onChange, onBack }: SettingsScreenPro
           >
             {settings.theme}
           </Button>
+        </div>
+        <div className="setting-row">
+          <span className="stepper-label">Animations</span>
+          <div className="setting-row-controls">
+            <SlideToggle
+              checked={settings.animations.enabled}
+              onChange={(enabled) =>
+                onChange({
+                  ...settings,
+                  animations: { ...settings.animations, enabled },
+                })
+              }
+              label="Animations"
+            />
+            <Button variant="secondary" onClick={onCustomizeAnimations}>
+              Customize…
+            </Button>
+          </div>
         </div>
       </div>
       <Button onClick={onBack}>Back</Button>

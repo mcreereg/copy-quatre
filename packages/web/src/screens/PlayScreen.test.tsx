@@ -1,4 +1,4 @@
-import { allOff, type GameEvent, type GameState } from "@copy-quatre/core";
+import { allOff, DEFAULT_SETTINGS, type GameEvent, type GameState } from "@copy-quatre/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -7,13 +7,7 @@ import { PlayScreen } from "./PlayScreen";
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     phase: "playing",
-    settings: {
-      timeLimitSec: 90,
-      gridSize: 4,
-      patternStyle: "cohesive",
-      theme: "yellow",
-      colorMode: "dark",
-    },
+    settings: DEFAULT_SETTINGS,
     reference: allOff(4),
     interactive: allOff(4),
     score: 0,

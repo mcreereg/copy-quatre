@@ -2,12 +2,24 @@ export type PatternStyle = "cohesive" | "chaos";
 export type ColorMode = "light" | "dark";
 export type ThemeId = "yellow" | "cyan" | "magenta" | "green" | "orange";
 
+export type AnimationSettings = {
+  enabled: boolean;
+  lineFlash: boolean;
+  flyingTiles: boolean;
+  rattlingTiles: boolean;
+  cellOnBlink: boolean;
+  cellOffBlink: boolean;
+};
+
+export type AnimationId = keyof Omit<AnimationSettings, "enabled">;
+
 export type Settings = {
   timeLimitSec: number;
   gridSize: number;
   patternStyle: PatternStyle;
   theme: ThemeId;
   colorMode: ColorMode;
+  animations: AnimationSettings;
 };
 
 export type Grid = boolean[][];
