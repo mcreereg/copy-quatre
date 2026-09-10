@@ -252,6 +252,8 @@ body {
 }
 
 .cell {
+  position: relative;
+  overflow: hidden;
   border-radius: 4px;
   border: 1px solid var(--cellBorder);
   transition: background 0.05s;
@@ -263,6 +265,42 @@ body {
 
 .cell-off {
   background: var(--cellOff);
+}
+
+.cell-ignite {
+  transition: none;
+}
+
+.cell-ignite::before,
+.cell-ignite::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 141.4214%;
+  height: 141.4214%;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+}
+
+.cell-ignite::before {
+  background: var(--cellOnBright);
+  animation: cell-ignite-expand 100ms linear forwards;
+}
+
+.cell-ignite::after {
+  background: var(--cellOn);
+  animation: cell-ignite-expand 100ms linear 50ms forwards;
+}
+
+@keyframes cell-ignite-expand {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .explode-layer {

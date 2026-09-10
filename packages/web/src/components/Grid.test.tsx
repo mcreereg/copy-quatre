@@ -107,4 +107,49 @@ describe("Grid", () => {
     fireEvent.pointerUp(window);
     expect(onPointerUp).toHaveBeenCalledOnce();
   });
+
+  it("adds cell-ignite when interactive cell turns on", () => {
+    const { container, rerender } = render(<Grid grid={allOff(2)} interactive />);
+    const first = container.querySelector("[data-cell]") as HTMLElement;
+    expect(first).not.toHaveClass("cell-ignite");
+
+    const next = allOff(2);
+    next[0][0] = true;
+    rerender(<Grid grid={next} interactive />);
+
+    expect(first).toHaveClass("cell-on");
+    expect(first).toHaveClass("cell-ignite");
+  });
+
+  it("does not ignite already-on cells on mount", () => {
+    const grid = allOff(2);
+    grid[0][0] = true;
+    const { container } = render(<Grid grid={grid} interactive />);
+    expect(container.querySelector(".cell-ignite")).toBeNull();
+    expect(container.querySelector(".cell-on")).not.toBeNull();
+  });
+
+  it("does not ignite readonly cells that turn on", () => {
+    const { container, rerender } = render(<Grid grid={allOff(2)} />);
+    const next = allOff(2);
+    next[0][0] = true;
+    rerender(<Grid grid={next} />);
+    expect(container.querySelector(".cell-on")).not.toBeNull();
+    expect(container.querySelector(".cell-ignite")).toBeNull();
+  });
+
+  it("drops ignite when cell turns off and re-ignites when turned on again", () => {
+    const { container, rerender } = render(<Grid grid={allOff(2)} interactive />);
+
+    const on = allOff(2);
+    on[0][0] = true;
+    rerender(<Grid grid={on} interactive />);
+    expect(container.querySelector(".cell-ignite")).not.toBeNull();
+
+    rerender(<Grid grid={allOff(2)} interactive />);
+    expect(container.querySelector(".cell-ignite")).toBeNull();
+
+    rerender(<Grid grid={on} interactive />);
+    expect(container.querySelector(".cell-ignite")).not.toBeNull();
+  });
 });

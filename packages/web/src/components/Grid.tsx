@@ -1,5 +1,6 @@
 import type { Grid as GridType } from "@copy-quatre/core";
 import { useCallback, useEffect, useRef, type Ref } from "react";
+import { cellIgniteKey, useIgniteKeys } from "./cellIgnite.js";
 
 type GridProps = {
   grid: GridType;
@@ -58,6 +59,7 @@ export function Grid({
   const size = grid.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  const igniteKeys = useIgniteKeys(grid, interactive);
 
   const setGridRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -145,7 +147,7 @@ export function Grid({
               data-cell
               data-row={r}
               data-col={c}
-              className={`cell ${on ? "cell-on" : "cell-off"}`}
+              className={`cell ${on ? "cell-on" : "cell-off"}${igniteKeys.has(cellIgniteKey(r, c)) ? " cell-ignite" : ""}`}
             />
           )),
         )}
