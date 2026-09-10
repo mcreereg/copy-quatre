@@ -303,6 +303,33 @@ body {
   }
 }
 
+.cell-extinguish {
+  transition: none;
+}
+
+.cell-extinguish::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 141.4214%;
+  height: 141.4214%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: var(--cellOn);
+  transform: translate(-50%, -50%) scale(1);
+  animation: cell-extinguish-shrink 100ms linear forwards;
+}
+
+@keyframes cell-extinguish-shrink {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(0);
+  }
+}
+
 .explode-layer {
   position: fixed;
   inset: 0;

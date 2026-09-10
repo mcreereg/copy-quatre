@@ -1,6 +1,6 @@
 import type { Grid as GridType } from "@copy-quatre/core";
 import { useCallback, useEffect, useRef, type Ref } from "react";
-import { cellIgniteKey, useIgniteKeys } from "./cellIgnite.js";
+import { cellIgniteKey, useCellToggleAnims } from "./cellIgnite.js";
 
 type GridProps = {
   grid: GridType;
@@ -47,6 +47,17 @@ function cellFromPoint(
   return cellFromCoordinates(clientX, clientY, gridEl, size);
 }
 
+function cellClassName(
+  on: boolean,
+  key: string,
+  igniteKeys: ReadonlySet<string>,
+  extinguishKeys: ReadonlySet<string>,
+): string {
+  const ignite = on && igniteKeys.has(key);
+  const extinguish = !on && extinguishKeys.has(key);
+  return `cell ${on ? "cell-on" : "cell-off"}${ignite ? " cell-ignite" : ""}${extinguish ? " cell-extinguish" : ""}`;
+}
+
 export function Grid({
   grid,
   interactive = false,
@@ -59,7 +70,7 @@ export function Grid({
   const size = grid.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  const igniteKeys = useIgniteKeys(grid, interactive);
+  const { igniteKeys, extinguishKeys } = useCellToggleAnims(grid, interactive);
 
   const setGridRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -147,7 +158,12 @@ export function Grid({
               data-cell
               data-row={r}
               data-col={c}
-              className={`cell ${on ? "cell-on" : "cell-off"}${igniteKeys.has(cellIgniteKey(r, c)) ? " cell-ignite" : ""}`}
+              className={cellClassName(
+                on,
+                cellIgniteKey(r, c),
+                igniteKeys,
+                extinguishKeys,
+              )}
             />
           )),
         )}

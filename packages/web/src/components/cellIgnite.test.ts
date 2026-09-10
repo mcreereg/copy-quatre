@@ -1,10 +1,12 @@
 import { allOff } from "@copy-quatre/core";
 import { describe, expect, it } from "vitest";
 import {
+  CELL_EXTINGUISH_MS,
   CELL_IGNITE_BRIGHT_MS,
   CELL_IGNITE_FADE_DELAY_MS,
   CELL_IGNITE_FADE_MS,
   cellIgniteKey,
+  nextExtinguishKeys,
   nextIgniteKeys,
 } from "./cellIgnite.js";
 
@@ -52,5 +54,43 @@ describe("nextIgniteKeys", () => {
 
   it("builds cell keys as row-col", () => {
     expect(cellIgniteKey(3, 4)).toBe("3-4");
+  });
+});
+
+describe("nextExtinguishKeys", () => {
+  it("shrinks theme over 100ms", () => {
+    expect(CELL_EXTINGUISH_MS).toBe(100);
+  });
+
+  it("adds keys for cells that turn off", () => {
+    const keys = nextExtinguishKeys(
+      gridWithOn(2, [[0, 1], [1, 0]]),
+      allOff(2),
+      new Set(),
+    );
+    expect(keys).toEqual(new Set(["0-1", "1-0"]));
+  });
+
+  it("keeps extinguish keys while cells stay off", () => {
+    const keys = nextExtinguishKeys(
+      allOff(2),
+      gridWithOn(2, [[0, 1]]),
+      new Set(["0-0"]),
+    );
+    expect(keys).toEqual(new Set(["0-0"]));
+  });
+
+  it("drops keys when cells turn back on", () => {
+    const keys = nextExtinguishKeys(
+      allOff(2),
+      gridWithOn(2, [[0, 0]]),
+      new Set(["0-0"]),
+    );
+    expect(keys.size).toBe(0);
+  });
+
+  it("ignores already-off cells when previous keys are empty", () => {
+    const keys = nextExtinguishKeys(allOff(2), allOff(2), new Set());
+    expect(keys.size).toBe(0);
   });
 });

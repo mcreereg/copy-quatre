@@ -1,5 +1,5 @@
 import { allOff } from "@copy-quatre/core";
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Grid } from "./Grid";
 
@@ -44,6 +44,7 @@ describe("Grid", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("paints across cells during drag via pointer move", () => {
@@ -151,5 +152,60 @@ describe("Grid", () => {
 
     rerender(<Grid grid={on} interactive />);
     expect(container.querySelector(".cell-ignite")).not.toBeNull();
+  });
+
+  it("adds cell-extinguish when interactive cell turns off and drops it after 100ms", () => {
+    vi.useFakeTimers();
+    const on = allOff(2);
+    on[0][0] = true;
+    const { container, rerender } = render(<Grid grid={on} interactive />);
+
+    rerender(<Grid grid={allOff(2)} interactive />);
+    const first = container.querySelector("[data-cell]") as HTMLElement;
+    expect(first).toHaveClass("cell-off");
+    expect(first).toHaveClass("cell-extinguish");
+    expect(first).not.toHaveClass("cell-ignite");
+
+    act(() => {
+      vi.advanceTimersByTime(99);
+    });
+    expect(first).toHaveClass("cell-extinguish");
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(first).not.toHaveClass("cell-extinguish");
+    vi.useRealTimers();
+  });
+
+  it("does not extinguish already-off cells on mount", () => {
+    const { container } = render(<Grid grid={allOff(2)} interactive />);
+    expect(container.querySelector(".cell-extinguish")).toBeNull();
+  });
+
+  it("does not extinguish readonly cells that turn off", () => {
+    const on = allOff(2);
+    on[0][0] = true;
+    const { container, rerender } = render(<Grid grid={on} />);
+    rerender(<Grid grid={allOff(2)} />);
+    expect(container.querySelector(".cell-off")).not.toBeNull();
+    expect(container.querySelector(".cell-extinguish")).toBeNull();
+  });
+
+  it("cancels extinguish when cell turns back on", () => {
+    vi.useFakeTimers();
+    const on = allOff(2);
+    on[0][0] = true;
+    const { container, rerender } = render(<Grid grid={on} interactive />);
+
+    rerender(<Grid grid={allOff(2)} interactive />);
+    expect(container.querySelector(".cell-extinguish")).not.toBeNull();
+
+    rerender(<Grid grid={on} interactive />);
+    const first = container.querySelector("[data-cell]") as HTMLElement;
+    expect(first).toHaveClass("cell-on");
+    expect(first).toHaveClass("cell-ignite");
+    expect(first).not.toHaveClass("cell-extinguish");
+    vi.useRealTimers();
   });
 });
