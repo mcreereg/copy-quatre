@@ -70,11 +70,10 @@ function main() {
   }
 
   if (baseWebVersion !== baseCoreVersion) {
-    console.error(
+    console.warn(
       `Base ref ${baseRef} has mismatched versions: web=${baseWebVersion}, core=${baseCoreVersion}.`,
     );
-    console.error('Fix main first, then bump both together.');
-    process.exit(1);
+    console.warn('Using web version as baseline (web is canonical).');
   }
 
   const result = isValidBump(baseWebVersion, webVersion);
