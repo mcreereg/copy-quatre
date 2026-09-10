@@ -2,18 +2,10 @@ import { createGrid, isInBounds } from "../../grid.js";
 import type { Rng } from "../../rng.js";
 import type { Grid } from "../../types.js";
 import { countOnGrid, removeIsolated } from "../shared/components.js";
-import {
-  STRINGY_SYMMETRY_WEIGHTS,
-  pickSymmetry,
-  setSymmetric,
-  type Symmetry,
-} from "../shared/symmetry.js";
 import { shouldAcceptPattern } from "../shared/validation.js";
 import {
   COMPONENT_PARAMS,
-  DENSITY_PARAMS,
   paramNumber,
-  paramNumberArray,
   resolveParams,
   desc,
   type AlgorithmDefinition,
@@ -28,14 +20,14 @@ const DIRECTIONS = [
   { dr: 0, dc: 1 },
 ];
 
-function pickFragmentCount(rng: Rng, weights: number[]): number {
-  const total = weights.reduce((s, w) => s + w, 0);
-  let roll = rng.nextInt(1, total);
-  for (let i = 0; i < weights.length; i++) {
-    roll -= weights[i];
-    if (roll <= 0) return i + 1;
-  }
-  return 1;
+/** Sample density in [min, max] with linear upside-down-V bias (center 2× edges). */
+function sampleTargetDensity(rng: Rng, min: number, max: number): number {
+  const u = rng.next();
+  const t =
+    u < 0.5
+      ? (-1 + Math.sqrt(1 + 6 * u)) / 2
+      : 1 - (-1 + Math.sqrt(1 + 6 * (1 - u))) / 2;
+  return min + t * (max - min);
 }
 
 function turnDirection(
@@ -52,11 +44,10 @@ function turnDirection(
 
 function walkWorm(
   grid: Grid,
-  sym: Symmetry,
   rng: Rng,
-  budget: number,
+  targetOn: number,
   momentum: number,
-): void {
+): boolean {
   const size = grid.length;
   let attempts = 0;
   const maxSeedAttempts = size * size;
@@ -72,11 +63,10 @@ function walkWorm(
     let dc = dir.dc;
     let cr = r;
     let cc = c;
-    let steps = 0;
 
-    while (steps < budget) {
-      if (!grid[cr][cc]) steps++;
-      setSymmetric(grid, cr, cc, sym, true);
+    while (true) {
+      grid[cr][cc] = true;
+      if (countOnGrid(grid) >= targetOn) return true;
 
       if (rng.next() >= momentum) {
         const turned = turnDirection(dr, dc, rng);
@@ -90,8 +80,9 @@ function walkWorm(
       cr = nr;
       cc = nc;
     }
-    return;
+    return true;
   }
+  return false;
 }
 
 function growStringy(
@@ -100,20 +91,12 @@ function growStringy(
   minDensity: number,
   maxDensity: number,
   momentum: number,
-  symmetryChance: number,
-  fragmentWeights: number[],
 ): Grid {
   const grid = createGrid(size);
-  const targetOn = Math.round(size * size * (minDensity + rng.next() * (maxDensity - minDensity)));
-  const fragmentCount = pickFragmentCount(rng, fragmentWeights);
-  const baseBudget = Math.floor(targetOn / fragmentCount);
+  const targetOn = Math.round(size * size * sampleTargetDensity(rng, minDensity, maxDensity));
 
-  for (let f = 0; f < fragmentCount; f++) {
-    const sym: Symmetry =
-      rng.next() < symmetryChance ? pickSymmetry(rng, STRINGY_SYMMETRY_WEIGHTS) : "none";
-    const jitter = rng.nextInt(-2, 2);
-    const budget = Math.max(1, baseBudget + jitter);
-    walkWorm(grid, sym, rng, budget, momentum);
+  while (countOnGrid(grid) < targetOn) {
+    if (!walkWorm(grid, rng, targetOn, momentum)) break;
   }
 
   removeIsolated(grid);
@@ -142,20 +125,10 @@ export function generateWormWalk(size: number, rng: Rng, params: AlgorithmParams
   const maxComponents = paramNumber(p, "maxComponents");
   const preferredMaxComponents = paramNumber(p, "preferredMaxComponents");
   const momentum = paramNumber(p, "stringyMomentum");
-  const symmetryChance = paramNumber(p, "stringySymmetryChance");
-  const fragmentWeights = paramNumberArray(p, "fragmentWeights");
   const validation = { minDensity, maxDensity, maxComponents };
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const grid = growStringy(
-      size,
-      rng,
-      minDensity,
-      maxDensity,
-      momentum,
-      symmetryChance,
-      fragmentWeights,
-    );
+    const grid = growStringy(size, rng, minDensity, maxDensity, momentum);
     if (
       countOnGrid(grid) > 0 &&
       shouldAcceptPattern(grid, validation, attempt, MAX_ATTEMPTS, preferredMaxComponents)
@@ -170,45 +143,48 @@ export function generateWormWalk(size: number, rng: Rng, params: AlgorithmParams
 export const wormWalkAlgorithm: AlgorithmDefinition = {
   id: "worm-walk",
   name: "Worm walk",
-  description: "Momentum-biased random walks producing thin stringy fragments.",
+  description:
+    "Momentum-biased random walks that spawn worm fragments until a center-biased target density is reached.",
   params: [
     {
       key: "stringyMomentum",
       label: "Momentum",
       type: "number",
-      default: 0.8,
-      min: 0.5,
+      default: 0.3,
+      min: 0.05,
       max: 0.99,
       step: 0.05,
       description: desc(
         "Probability of continuing straight on each step. Higher values produce longer, thinner strokes.",
-        "0.75–0.92",
+        "0.25–0.85",
       ),
     },
     {
-      key: "stringySymmetryChance",
-      label: "Symmetry chance",
+      key: "minDensity",
+      label: "Min density",
       type: "number",
-      default: 0.2,
-      min: 0,
-      max: 1,
+      default: 0.25,
+      min: 0.05,
+      max: 0.95,
       step: 0.05,
       description: desc(
-        "Chance each worm fragment uses light symmetry (single-axis mirror).",
-        "0–0.35",
+        "Lower bound for target density sampling. Mid-range values are sampled more often than this edge.",
+        "0.20–0.35",
       ),
     },
     {
-      key: "fragmentWeights",
-      label: "Fragment weights",
-      type: "numberArray",
-      default: [55, 30, 12, 3],
+      key: "maxDensity",
+      label: "Max density",
+      type: "number",
+      default: 0.75,
+      min: 0.05,
+      max: 0.95,
+      step: 0.05,
       description: desc(
-        "Relative weights for generating 1, 2, 3, or 4 disconnected worm fragments.",
-        "[55,30,12,3] or [70,20,8,2] for fewer fragments",
+        "Upper bound for target density sampling. Mid-range values are sampled more often than this edge.",
+        "0.55–0.75",
       ),
     },
-    ...DENSITY_PARAMS,
     ...COMPONENT_PARAMS,
   ],
   generate: generateWormWalk,

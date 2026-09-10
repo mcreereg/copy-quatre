@@ -2,6 +2,7 @@ import {
   DEFAULT_ALGORITHM_ID,
   PATGEN_GLOBAL_PARAMS,
   PATTERN_ALGORITHMS,
+  RANDOM_PATGEN_SEED,
   runPatgenBatch,
   type AlgorithmParams,
   type Grid,
@@ -18,6 +19,7 @@ export function App() {
   const [seed, setSeed] = useState(1);
   const [params, setParams] = useState<AlgorithmParams>({});
   const [patterns, setPatterns] = useState<Grid[]>([]);
+  const [resolvedSeed, setResolvedSeed] = useState<number | null>(null);
 
   const algorithm = useMemo(
     () => PATTERN_ALGORITHMS.find((a) => a.id === algorithmId) ?? PATTERN_ALGORITHMS[0],
@@ -34,6 +36,7 @@ export function App() {
     const next = PATTERN_ALGORITHMS.find((a) => a.id === id);
     setParams(next ? defaultParamsFromDefs(next.params) : {});
     setPatterns([]);
+    setResolvedSeed(null);
   };
 
   const onParamChange = (key: string, value: number | boolean | string | number[]) => {
@@ -41,15 +44,15 @@ export function App() {
   };
 
   const generate = () => {
-    setPatterns(
-      runPatgenBatch({
-        algorithmId,
-        gridSize,
-        count,
-        seed,
-        params: effectiveParams,
-      }),
-    );
+    const result = runPatgenBatch({
+      algorithmId,
+      gridSize,
+      count,
+      seed,
+      params: effectiveParams,
+    });
+    setPatterns(result.grids);
+    setResolvedSeed(result.seed);
   };
 
   return (
@@ -121,11 +124,16 @@ export function App() {
         {patterns.length === 0 ? (
           <p className="empty">Click Generate to preview patterns.</p>
         ) : (
-          <div className="pattern-grid">
-            {patterns.map((grid, i) => (
-              <MiniGrid key={i} grid={grid} index={i} />
-            ))}
-          </div>
+          <>
+            {seed === RANDOM_PATGEN_SEED && resolvedSeed !== null ? (
+              <p className="seed-display">Random seed: {resolvedSeed}</p>
+            ) : null}
+            <div className="pattern-grid">
+              {patterns.map((grid, i) => (
+                <MiniGrid key={i} grid={grid} index={i} />
+              ))}
+            </div>
+          </>
         )}
       </section>
     </div>

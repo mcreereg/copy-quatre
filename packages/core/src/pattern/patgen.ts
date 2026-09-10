@@ -3,12 +3,19 @@ import type { Grid } from "../types.js";
 import { getAlgorithm, PATTERN_ALGORITHMS, DEFAULT_ALGORITHM_ID } from "./algorithms/registry.js";
 import { desc, resolveParams, type AlgorithmParams, type ParamDef } from "./algorithms/types.js";
 
+export const RANDOM_PATGEN_SEED = -1;
+
 export type PatgenBatchOptions = {
   algorithmId?: string;
   gridSize: number;
   count: number;
   seed: number;
   params?: AlgorithmParams;
+};
+
+export type PatgenBatchResult = {
+  grids: Grid[];
+  seed: number;
 };
 
 export type PatgenGlobalParamDef = {
@@ -48,17 +55,24 @@ export const PATGEN_GLOBAL_PARAMS: PatgenGlobalParamDef[] = [
     label: "Seed",
     type: "number",
     default: 1,
-    min: 0,
+    min: RANDOM_PATGEN_SEED,
     max: 999_999_999,
     step: 1,
     description: desc(
-      "PRNG seed. Each pattern uses seed + index for reproducibility.",
-      "1–100 for quick iteration",
+      "PRNG seed. Each pattern uses seed + index for reproducibility. Use -1 for a random seed.",
+      "1–100 for quick iteration, -1 for random",
     ),
   },
 ];
 
-export function runPatgenBatch(options: PatgenBatchOptions): Grid[] {
+export function resolvePatgenSeed(seed: number): number {
+  if (seed !== RANDOM_PATGEN_SEED) {
+    return seed;
+  }
+  return Math.floor(Math.random() * 999_999_999);
+}
+
+export function runPatgenBatch(options: PatgenBatchOptions): PatgenBatchResult {
   const algorithmId = options.algorithmId ?? DEFAULT_ALGORITHM_ID;
   const algorithm = getAlgorithm(algorithmId);
   if (!algorithm) {
@@ -66,14 +80,15 @@ export function runPatgenBatch(options: PatgenBatchOptions): Grid[] {
   }
 
   const params = resolveParams(algorithm.params, options.params ?? {});
+  const seed = resolvePatgenSeed(options.seed);
   const grids: Grid[] = [];
 
   for (let i = 0; i < options.count; i++) {
-    const rng = createRng(options.seed + i);
+    const rng = createRng(seed + i);
     grids.push(algorithm.generate(options.gridSize, rng, params));
   }
 
-  return grids;
+  return { grids, seed };
 }
 
 export { getAlgorithm, PATTERN_ALGORITHMS, DEFAULT_ALGORITHM_ID };

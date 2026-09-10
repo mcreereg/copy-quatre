@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { density, gridHash, hasAnyOn } from "../grid.js";
 import { createRng } from "../rng.js";
+import { countComponents } from "./shared/components.js";
 import { generateCohesivePattern, generateCohesivePatternUnique } from "./cohesive.js";
 
 describe("cohesive pattern", () => {
@@ -9,7 +10,7 @@ describe("cohesive pattern", () => {
     const grid = generateCohesivePattern(4, rng);
     expect(hasAnyOn(grid)).toBe(true);
     expect(density(grid)).toBeGreaterThanOrEqual(0.25);
-    expect(density(grid)).toBeLessThanOrEqual(0.65);
+    expect(density(grid)).toBeLessThanOrEqual(0.75);
   });
 
   it("avoids immediate repeat when possible", () => {
@@ -25,7 +26,7 @@ describe("cohesive pattern", () => {
       const grid = generateCohesivePattern(2, createRng(seed));
       expect(hasAnyOn(grid)).toBe(true);
       expect(density(grid)).toBeGreaterThanOrEqual(0.25);
-      expect(density(grid)).toBeLessThanOrEqual(0.65);
+      expect(density(grid)).toBeLessThanOrEqual(0.75);
     }
   });
 
@@ -34,44 +35,12 @@ describe("cohesive pattern", () => {
     expect(hasAnyOn(grid)).toBe(true);
   });
 
-  it("stays connected for many seeds", () => {
-    function components(grid: ReturnType<typeof generateCohesivePattern>): number {
-      const size = grid.length;
-      const seen = new Set<string>();
-      let count = 0;
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          if (!grid[r][c]) continue;
-          const start = `${r},${c}`;
-          if (seen.has(start)) continue;
-          count++;
-          const queue = [{ r, c }];
-          seen.add(start);
-          while (queue.length) {
-            const { r: cr, c: cc } = queue.pop()!;
-            for (const [nr, nc] of [
-              [cr - 1, cc],
-              [cr + 1, cc],
-              [cr, cc - 1],
-              [cr, cc + 1],
-            ]) {
-              if (nr < 0 || nc < 0 || nr >= size || nc >= size || !grid[nr][nc]) continue;
-              const key = `${nr},${nc}`;
-              if (seen.has(key)) continue;
-              seen.add(key);
-              queue.push({ r: nr, c: nc });
-            }
-          }
-        }
-      }
-      return count;
-    }
-
+  it("respects worm-walk component limits for many seeds", () => {
     for (let seed = 0; seed < 200; seed++) {
       const grid = generateCohesivePattern(10, createRng(seed));
-      expect(components(grid)).toBeLessThanOrEqual(1);
+      expect(countComponents(grid)).toBeLessThanOrEqual(4);
       expect(density(grid)).toBeGreaterThanOrEqual(0.25);
-      expect(density(grid)).toBeLessThanOrEqual(0.65);
+      expect(density(grid)).toBeLessThanOrEqual(0.75);
     }
   });
 });

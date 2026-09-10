@@ -7,7 +7,7 @@ export const legacyCohesiveAlgorithm: AlgorithmDefinition = {
   id: "legacy-cohesive",
   name: "Legacy cohesive blob",
   description:
-    "Original game cohesive algorithm: symmetric blob growth, always single connected component. Same output as game cohesive mode.",
+    "Original symmetric blob growth algorithm, always single connected component. Preserved for comparison with current game patterns.",
   params: [],
   generate: (size: number, rng: Rng, _params: AlgorithmParams): Grid =>
     generateLegacyCohesivePattern(size, rng),

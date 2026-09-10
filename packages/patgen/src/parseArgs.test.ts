@@ -26,13 +26,21 @@ describe("parseCliArgs", () => {
     expect(opts.count).toBe(2);
   });
 
-  it("parses number arrays", () => {
+  it("parses random seed sentinel", () => {
+    const opts = parseCliArgs(["--seed", "-1"]);
+    expect(opts.seed).toBe(-1);
+  });
+
+  it("parses worm-walk params", () => {
     const opts = parseCliArgs([
       "--algorithm",
       "worm-walk",
-      "--fragment-weights",
-      "10,20,30,40",
+      "--stringy-momentum",
+      "0.85",
+      "--min-density",
+      "0.3",
     ]);
-    expect(opts.params.fragmentWeights).toEqual([10, 20, 30, 40]);
+    expect(opts.params.stringyMomentum).toBe(0.85);
+    expect(opts.params.minDensity).toBe(0.3);
   });
 });

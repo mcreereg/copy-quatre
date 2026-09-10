@@ -33,8 +33,6 @@ export function generateMorphologyMix(size: number, rng: Rng, params: AlgorithmP
   return generateWormWalk(size, rng, {
     ...sharedParams,
     stringyMomentum: p.stringyMomentum,
-    stringySymmetryChance: p.stringySymmetryChance,
-    fragmentWeights: p.fragmentWeights,
   });
 }
 
@@ -67,29 +65,6 @@ export const morphologyMixAlgorithm: AlgorithmDefinition = {
       description: desc(
         "Momentum for the worm-walk branch. Higher values produce longer strokes.",
         "0.75–0.90",
-      ),
-    },
-    {
-      key: "stringySymmetryChance",
-      label: "Stringy symmetry chance",
-      type: "number",
-      default: 0.2,
-      min: 0,
-      max: 1,
-      step: 0.05,
-      description: desc(
-        "Symmetry chance when the stringy branch is selected.",
-        "0.10–0.30",
-      ),
-    },
-    {
-      key: "fragmentWeights",
-      label: "Fragment weights",
-      type: "numberArray",
-      default: [55, 30, 12, 3],
-      description: desc(
-        "Fragment count weights for the worm-walk branch.",
-        "[55,30,12,3]",
       ),
     },
     ...DENSITY_PARAMS,
