@@ -1,19 +1,18 @@
-import { allOff, type GameEvent, type GameState } from "@copy-quatre/core";
+import { allOff, DEFAULT_SETTINGS, type GameEvent, type GameState } from "@copy-quatre/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { vibrateMatch } from "../platform/vibration";
 import { PlayScreen } from "./PlayScreen";
+
+vi.mock("../platform/vibration", () => ({
+  vibrateMatch: vi.fn(),
+}));
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     phase: "playing",
-    settings: {
-      timeLimitSec: 90,
-      gridSize: 4,
-      patternStyle: "cohesive",
-      theme: "yellow",
-      colorMode: "dark",
-    },
+    settings: DEFAULT_SETTINGS,
     reference: allOff(4),
     interactive: allOff(4),
     score: 0,
@@ -27,6 +26,80 @@ function makeDispatch(events: GameEvent[] = []) {
 }
 
 describe("PlayScreen", () => {
+  beforeEach(() => {
+    vi.mocked(vibrateMatch).mockClear();
+  });
+
+  it("vibrates on scored when vibration enabled", async () => {
+    const user = userEvent.setup();
+    const reference = allOff(2);
+    const interactive = allOff(2);
+    interactive[0][0] = true;
+    reference[0][0] = true;
+
+    const dispatch = makeDispatch([
+      {
+        type: "SCORED",
+        score: 1,
+        matchedReference: reference,
+        matchedInteractive: interactive,
+      },
+    ]);
+
+    const { container } = render(
+      <PlayScreen
+        state={makeState({
+          settings: { ...DEFAULT_SETTINGS, gridSize: 2, vibration: true },
+          reference,
+          interactive,
+        })}
+        dispatch={dispatch}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    const cell = container.querySelector(".grid-interactive [data-cell]") as HTMLElement;
+    await user.pointer({ keys: "[MouseLeft>]", target: cell });
+    expect(vibrateMatch).toHaveBeenCalledOnce();
+  });
+
+  it("skips vibration on scored when vibration disabled", async () => {
+    const user = userEvent.setup();
+    const reference = allOff(2);
+    const interactive = allOff(2);
+    interactive[0][0] = true;
+    reference[0][0] = true;
+
+    const dispatch = makeDispatch([
+      {
+        type: "SCORED",
+        score: 1,
+        matchedReference: reference,
+        matchedInteractive: interactive,
+      },
+    ]);
+
+    const { container } = render(
+      <PlayScreen
+        state={makeState({
+          settings: { ...DEFAULT_SETTINGS, gridSize: 2, vibration: false },
+          reference,
+          interactive,
+        })}
+        dispatch={dispatch}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    const cell = container.querySelector(".grid-interactive [data-cell]") as HTMLElement;
+    await user.pointer({ keys: "[MouseLeft>]", target: cell });
+    expect(vibrateMatch).not.toHaveBeenCalled();
+  });
+
   it("shows Resume inside pause overlay", async () => {
     const user = userEvent.setup();
     const onResume = vi.fn();

@@ -1,6 +1,7 @@
 import { allOff, gridHash, gridsEqual, setCell, toggleCell } from "./grid.js";
 import { generatePattern } from "./pattern/index.js";
 import type { Rng } from "./rng.js";
+import { DEFAULT_SETTINGS } from "./settings.js";
 import type { GameEvent, GameState, Grid, Settings } from "./types.js";
 
 export type GameAction =
@@ -27,13 +28,7 @@ export type GameEngine = {
 function createInitialState(): GameState {
   return {
     phase: "gameover",
-    settings: {
-      timeLimitSec: 90,
-      gridSize: 4,
-      patternStyle: "cohesive",
-      theme: "yellow",
-      colorMode: "dark",
-    },
+    settings: DEFAULT_SETTINGS,
     reference: allOff(4),
     interactive: allOff(4),
     score: 0,

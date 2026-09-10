@@ -57,10 +57,16 @@ export function nextExtinguishKeys(
   return keys;
 }
 
+export type CellToggleAnimFlags = {
+  ignite: boolean;
+  extinguish: boolean;
+};
+
 export function useCellToggleAnims(
   grid: Grid,
-  enabled: boolean,
+  flags: CellToggleAnimFlags,
 ): { igniteKeys: ReadonlySet<string>; extinguishKeys: ReadonlySet<string> } {
+  const { ignite: igniteEnabled, extinguish: extinguishEnabled } = flags;
   const [anim, setAnim] = useState<{
     grid: Grid;
     ignite: Set<string>;
@@ -83,13 +89,15 @@ export function useCellToggleAnims(
   let igniteKeys: ReadonlySet<string> = EMPTY_KEYS;
   let extinguishKeys: ReadonlySet<string> = EMPTY_KEYS;
 
-  if (enabled) {
+  if (igniteEnabled || extinguishEnabled) {
     if (anim.grid === grid) {
-      igniteKeys = anim.ignite;
-      extinguishKeys = anim.extinguish;
+      igniteKeys = igniteEnabled ? anim.ignite : EMPTY_KEYS;
+      extinguishKeys = extinguishEnabled ? anim.extinguish : EMPTY_KEYS;
     } else {
-      const ignite = nextIgniteKeys(anim.grid, grid, anim.ignite);
-      const extinguish = nextExtinguishKeys(anim.grid, grid, anim.extinguish);
+      const ignite = igniteEnabled ? nextIgniteKeys(anim.grid, grid, anim.ignite) : new Set<string>();
+      const extinguish = extinguishEnabled
+        ? nextExtinguishKeys(anim.grid, grid, anim.extinguish)
+        : new Set<string>();
       igniteKeys = ignite;
       extinguishKeys = extinguish;
       setAnim({ grid, ignite, extinguish });
@@ -97,7 +105,7 @@ export function useCellToggleAnims(
   }
 
   useEffect(() => {
-    if (!enabled) {
+    if (!extinguishEnabled) {
       for (const id of timeoutsRef.current.values()) {
         window.clearTimeout(id);
       }
@@ -124,7 +132,7 @@ export function useCellToggleAnims(
       window.clearTimeout(id);
       timeoutsRef.current.delete(key);
     }
-  }, [enabled, extinguishKeys]);
+  }, [extinguishEnabled, extinguishKeys]);
 
   return { igniteKeys, extinguishKeys };
 }

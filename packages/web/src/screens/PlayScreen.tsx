@@ -1,4 +1,5 @@
 import {
+  isAnimationActive,
   type GameAction,
   type GameEvent,
   type GameState,
@@ -8,6 +9,7 @@ import { Button } from "../components/Button";
 import { ExplodeLayer } from "../components/ExplodeLayer";
 import { Grid } from "../components/Grid";
 import { useExplodeAnimation } from "../hooks/useExplodeAnimation";
+import { vibrateMatch } from "../platform/vibration";
 
 type PlayScreenProps = {
   state: GameState;
@@ -27,10 +29,12 @@ function formatTimer(ms: number): string {
 function handleScoredEvents(
   events: GameEvent[],
   spawn: (matchedReference: GameState["reference"], matchedInteractive: GameState["interactive"]) => void,
+  vibrationEnabled: boolean,
 ) {
   for (const event of events) {
     if (event.type === "SCORED") {
       spawn(event.matchedReference, event.matchedInteractive);
+      if (vibrationEnabled) vibrateMatch();
     }
   }
 }
@@ -48,22 +52,25 @@ export function PlayScreen({
   const { cells, midlines, shakes, spawn } = useExplodeAnimation(
     referenceGridRef,
     interactiveGridRef,
+    state.settings.animations,
   );
+  const cellOnBlink = isAnimationActive(state.settings, "cellOnBlink");
+  const cellOffBlink = isAnimationActive(state.settings, "cellOffBlink");
 
   const handlePointerDown = useCallback(
     (row: number, col: number) => {
       const events = dispatch({ type: "POINTER_DOWN", row, col });
-      handleScoredEvents(events, spawn);
+      handleScoredEvents(events, spawn, state.settings.vibration);
     },
-    [dispatch, spawn],
+    [dispatch, spawn, state.settings.vibration],
   );
 
   const handlePointerEnter = useCallback(
     (row: number, col: number) => {
       const events = dispatch({ type: "POINTER_ENTER", row, col });
-      handleScoredEvents(events, spawn);
+      handleScoredEvents(events, spawn, state.settings.vibration);
     },
-    [dispatch, spawn],
+    [dispatch, spawn, state.settings.vibration],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -112,6 +119,8 @@ export function PlayScreen({
             label="Your grid"
             gridRef={interactiveGridRef}
             shakeSpecs={shakes?.int}
+            cellOnBlink={cellOnBlink}
+            cellOffBlink={cellOffBlink}
             onPointerDown={handlePointerDown}
             onPointerEnter={handlePointerEnter}
             onPointerUp={handlePointerUp}

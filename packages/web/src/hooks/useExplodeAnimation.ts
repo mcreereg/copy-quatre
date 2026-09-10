@@ -1,4 +1,4 @@
-import type { Grid } from "@copy-quatre/core";
+import type { AnimationSettings, Grid } from "@copy-quatre/core";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
   buildGridShake,
@@ -19,6 +19,7 @@ let nextBlastId = 0;
 export function useExplodeAnimation(
   referenceGridRef: RefObject<HTMLDivElement | null>,
   interactiveGridRef: RefObject<HTMLDivElement | null>,
+  animations: AnimationSettings,
 ) {
   const [cells, setCells] = useState<FlyingCell[]>([]);
   const [midlines, setMidlines] = useState<MidlineBlast[]>([]);
@@ -79,6 +80,8 @@ export function useExplodeAnimation(
 
   const spawn = useCallback(
     (matchedReference: Grid, matchedInteractive: Grid) => {
+      if (!animations.enabled) return;
+
       const referenceEl = referenceGridRef.current;
       const interactiveEl = interactiveGridRef.current;
       if (!referenceEl || !interactiveEl) return;
@@ -87,13 +90,19 @@ export function useExplodeAnimation(
       const blastId = nextBlastId++;
       const rng = Math.random;
 
-      setShakes(buildGridShake(referenceEl, interactiveEl, sideBySide, rng));
+      if (animations.rattlingTiles) {
+        setShakes(buildGridShake(referenceEl, interactiveEl, sideBySide, rng));
 
-      const shakeTimeoutId = window.setTimeout(() => {
-        setShakes(null);
-        timeoutsRef.current = timeoutsRef.current.filter((id) => id !== shakeTimeoutId);
-      }, shakeClearDelayMs());
-      timeoutsRef.current.push(shakeTimeoutId);
+        const shakeTimeoutId = window.setTimeout(() => {
+          setShakes(null);
+          timeoutsRef.current = timeoutsRef.current.filter((id) => id !== shakeTimeoutId);
+        }, shakeClearDelayMs());
+        timeoutsRef.current.push(shakeTimeoutId);
+      }
+
+      const wantFlying = animations.flyingTiles;
+      const wantMidline = animations.lineFlash;
+      if (!wantFlying && !wantMidline) return;
 
       const spawned = buildExplosion(
         matchedReference,
@@ -107,19 +116,23 @@ export function useExplodeAnimation(
       );
       if (!spawned) return;
 
-      cellsRef.current = [...cellsRef.current, ...spawned.cells];
-      setCells([...cellsRef.current]);
-      setMidlines((current) => [...current, spawned.midline]);
+      if (wantFlying) {
+        cellsRef.current = [...cellsRef.current, ...spawned.cells];
+        setCells([...cellsRef.current]);
+        startLoop();
+      }
 
-      const midlineTimeoutId = window.setTimeout(() => {
-        setMidlines((current) => current.filter((line) => line.id !== spawned.midline.id));
-        timeoutsRef.current = timeoutsRef.current.filter((id) => id !== midlineTimeoutId);
-      }, MIDLINE_DURATION_MS + 30);
-      timeoutsRef.current.push(midlineTimeoutId);
+      if (wantMidline) {
+        setMidlines((current) => [...current, spawned.midline]);
 
-      startLoop();
+        const midlineTimeoutId = window.setTimeout(() => {
+          setMidlines((current) => current.filter((line) => line.id !== spawned.midline.id));
+          timeoutsRef.current = timeoutsRef.current.filter((id) => id !== midlineTimeoutId);
+        }, MIDLINE_DURATION_MS + 30);
+        timeoutsRef.current.push(midlineTimeoutId);
+      }
     },
-    [interactiveGridRef, referenceGridRef, startLoop],
+    [animations, interactiveGridRef, referenceGridRef, startLoop],
   );
 
   return { cells, midlines, shakes, spawn };

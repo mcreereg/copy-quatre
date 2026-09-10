@@ -14,11 +14,12 @@ import { loadHighScores, loadSettings, saveHighScores, saveSettings } from "./pl
 import { GameOverScreen } from "./screens/GameOverScreen";
 import { HighScoresScreen } from "./screens/HighScoresScreen";
 import { PlayScreen } from "./screens/PlayScreen";
+import { AnimationSettingsScreen } from "./screens/AnimationSettingsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { TitleScreen } from "./screens/TitleScreen";
 import "./styles.css";
 
-type Screen = "title" | "settings" | "highscores" | "playing" | "gameover";
+type Screen = "title" | "settings" | "animations" | "highscores" | "playing" | "gameover";
 
 export function App() {
   const [screen, setScreen] = useState<Screen>("title");
@@ -97,7 +98,7 @@ export function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" data-animations={settings.animations.enabled ? "on" : "off"}>
       {screen === "title" && (
         <TitleScreen
           onStart={handleStart}
@@ -109,7 +110,15 @@ export function App() {
         <SettingsScreen
           settings={settings}
           onChange={handleSettingsChange}
+          onCustomizeAnimations={() => setScreen("animations")}
           onBack={() => setScreen("title")}
+        />
+      )}
+      {screen === "animations" && (
+        <AnimationSettingsScreen
+          settings={settings}
+          onChange={handleSettingsChange}
+          onBack={() => setScreen("settings")}
         />
       )}
       {screen === "highscores" && (

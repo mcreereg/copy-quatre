@@ -1,7 +1,12 @@
+import { DEFAULT_SETTINGS } from "@copy-quatre/core";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resetPreferencesMock } from "./test/mocks/preferences";
+import {
+  allAnimationSettingsCombinations,
+  formatAnimationSettingsLabel,
+} from "./test/animationMatrix.js";
+import { Preferences, resetPreferencesMock } from "./test/mocks/preferences";
 
 vi.mock("@capacitor/preferences", () => import("./test/mocks/preferences"));
 
@@ -22,11 +27,43 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Vibration" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Animations" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("switch", { name: "Animations" }));
+    await user.click(screen.getByRole("button", { name: "Customize…" }));
+    expect(screen.getByRole("heading", { name: "Animation Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/All animations are currently disabled/);
+    expect(screen.getByRole("switch", { name: "Line flash" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Back" }));
     await user.click(screen.getByRole("button", { name: "High Scores" }));
     expect(screen.getByRole("heading", { name: "High Scores" })).toBeInTheDocument();
     expect(screen.getByText("0")).toBeInTheDocument();
+  });
+
+  it.each(
+    allAnimationSettingsCombinations().map((animations) => ({
+      animations,
+      label: formatAnimationSettingsLabel(animations),
+    })),
+  )("sets data-animations from saved settings ($label)", async ({ animations }) => {
+    await Preferences.set({
+      key: "copy-quatre:settings",
+      value: JSON.stringify({ ...DEFAULT_SETTINGS, animations }),
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(document.querySelector(".app")).toHaveAttribute(
+        "data-animations",
+        animations.enabled ? "on" : "off",
+      );
+    });
   });
 
   it("quit during play records score and shows game over", async () => {
