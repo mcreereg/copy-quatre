@@ -20,6 +20,17 @@ describe("patgen registry", () => {
     expect(getAlgorithm("missing")).toBeUndefined();
   });
 
+  it("throws for unknown algorithm ids", () => {
+    expect(() =>
+      runPatgenBatch({
+        algorithmId: "missing",
+        gridSize: 4,
+        count: 1,
+        seed: 1,
+      }),
+    ).toThrow(RangeError);
+  });
+
   it("generates reproducible batches", () => {
     const a = runPatgenBatch({
       algorithmId: "morphology-mix",

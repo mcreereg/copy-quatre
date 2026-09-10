@@ -1,4 +1,4 @@
-import { createGrid, density, gridHash, hasAnyOn, isInBounds } from "../../grid.js";
+import { createGrid, density, hasAnyOn, isInBounds } from "../../grid.js";
 import type { Rng } from "../../rng.js";
 import type { Grid } from "../../types.js";
 import { countOnGrid, isConnected, removeIsolated } from "../shared/components.js";
@@ -123,18 +123,4 @@ export function generateLegacyCohesivePattern(size: number, rng: Rng): Grid {
   grid[0][0] = true;
   if (size > 1) grid[0][1] = true;
   return grid;
-}
-
-export function generateLegacyCohesivePatternUnique(
-  size: number,
-  rng: Rng,
-  avoidHash?: string,
-): Grid {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const grid = generateLegacyCohesivePattern(size, rng);
-    if (!avoidHash || gridHash(grid) !== avoidHash) {
-      return grid;
-    }
-  }
-  return generateLegacyCohesivePattern(size, rng);
 }

@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { density, gridHash, hasAnyOn } from "../grid.js";
 import { createRng } from "../rng.js";
+import * as wormWalk from "./algorithms/wormWalk.js";
 import { countComponents } from "./shared/components.js";
 import { generateCohesivePattern, generateCohesivePatternUnique } from "./cohesive.js";
 
@@ -19,6 +20,19 @@ describe("cohesive pattern", () => {
     const hash = gridHash(first);
     const second = generateCohesivePatternUnique(4, rng, hash);
     expect(gridHash(second)).not.toBe(hash);
+  });
+
+  it("returns a pattern when avoidHash is omitted", () => {
+    const grid = generateCohesivePatternUnique(4, createRng(12));
+    expect(hasAnyOn(grid)).toBe(true);
+  });
+
+  it("returns last attempt when unique retries exhaust", () => {
+    const fixed = generateCohesivePattern(4, createRng(1));
+    vi.spyOn(wormWalk, "generateWormWalk").mockReturnValue(fixed);
+    const grid = generateCohesivePatternUnique(4, createRng(1), gridHash(fixed));
+    expect(grid).toEqual(fixed);
+    vi.restoreAllMocks();
   });
 
   it("works for small grids", () => {

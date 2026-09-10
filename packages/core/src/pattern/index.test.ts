@@ -39,4 +39,14 @@ describe("generatePattern", () => {
     expect(grid).toHaveLength(3);
     vi.restoreAllMocks();
   });
+
+  it("returns last cohesive attempt when avoidHash retries exhaust", () => {
+    const fixed = allOff(4);
+    fixed[0][0] = true;
+    const hash = gridHash(fixed);
+    vi.spyOn(cohesive, "generateCohesivePatternUnique").mockReturnValue(fixed);
+    const grid = generatePattern("cohesive", 4, createRng(1), hash);
+    expect(grid).toEqual(fixed);
+    vi.restoreAllMocks();
+  });
 });
