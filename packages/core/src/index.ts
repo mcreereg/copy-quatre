@@ -5,4 +5,7 @@ export * from "./settings.js";
 export * from "./themes.js";
 export * from "./highScore.js";
 export * from "./pattern/index.js";
+export * from "./pattern/patgen.js";
+export { gridToAscii, formatPatternBlock } from "./pattern/shared/gridToAscii.js";
+export { countComponents } from "./pattern/shared/components.js";
 export * from "./gameEngine.js";

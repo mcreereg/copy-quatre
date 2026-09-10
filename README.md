@@ -27,6 +27,17 @@ pnpm test:coverage  # core tests with 90%+ coverage gate
 pnpm build          # build core + web
 ```
 
+### patgen (local dev only)
+
+Pattern generator dev tool for experimenting with algorithms. PC-only, not built for release.
+
+```bash
+pnpm patgen         # GUI at http://localhost:5174
+pnpm patgen:cli     # CLI — ASCII patterns, sequential output
+pnpm patgen:cli --help
+pnpm patgen:cli --algorithm morphology-mix --count 4 --grid-size 8
+```
+
 ## Android (Capacitor)
 
 Native shell is committed at `packages/web/android/`. After web changes, sync the bundle, then build an APK.
@@ -69,6 +80,7 @@ APK: `packages/web/android/app/build/outputs/apk/release/`. No signing config in
 
 - `packages/core` — game logic, pattern generation, scoring (framework-agnostic, fully unit tested)
 - `packages/web` — React + Vite browser client + Capacitor shell
+- `packages/patgen` — local-dev pattern generator tool (CLI + GUI, not shipped)
 
 ## Game controls
 

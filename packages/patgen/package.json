@@ -1,0 +1,31 @@
+{
+  "name": "@copy-quatre/patgen",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "cli": "tsx src/cli.ts",
+    "build": "tsc -p tsconfig.cli.json && vite build",
+    "lint": "tsc --noEmit && tsc -p tsconfig.cli.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@copy-quatre/core": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^26.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "vitest": "^4.1.11"
+  }
+}
