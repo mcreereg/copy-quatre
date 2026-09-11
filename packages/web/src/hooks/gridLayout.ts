@@ -7,6 +7,17 @@ export type GridAreaMetrics = {
 
 /** Matches `.play-screen .grid { calc(100cqh - 1.25rem) }`. */
 export const GRID_LABEL_ALLOWANCE_REM = 1.25;
+/** Matches `.play-screen .grids-container.grids-side-by-side { gap: max(25px, 0.75rem) }`. */
+export const GRIDS_SIDE_BY_SIDE_MIN_GAP_PX = 25;
+export const GRIDS_STACKED_GAP_REM = 0.75;
+
+export function stackedGapPx(rootFontSize?: number): number {
+  return GRIDS_STACKED_GAP_REM * remPx(rootFontSize);
+}
+
+export function sideBySideGapPx(rootFontSize?: number): number {
+  return Math.max(GRIDS_SIDE_BY_SIDE_MIN_GAP_PX, stackedGapPx(rootFontSize));
+}
 
 export function remPx(rootFontSize = 16): number {
   if (typeof document === "undefined") return rootFontSize;
@@ -22,10 +33,17 @@ export function parseGap(style: CSSStyleDeclaration): number {
   return 0;
 }
 
+type GridAreaDimensions = {
+  width: number;
+  height: number;
+  labelAllowancePx: number;
+};
+
 /** Largest square grid size for a given layout inside the play area. */
 export function maxSquareGridSize(
-  { width, height, gapPx, labelAllowancePx }: GridAreaMetrics,
+  { width, height, labelAllowancePx }: GridAreaDimensions,
   sideBySide: boolean,
+  gapPx = sideBySide ? sideBySideGapPx() : stackedGapPx(),
 ): number {
   if (width <= 0 || height <= 0) return 0;
 
@@ -40,8 +58,13 @@ export function maxSquareGridSize(
 
 /** Pick side-by-side when it yields a strictly larger square grid. */
 export function preferSideBySideLayout(metrics: GridAreaMetrics): boolean {
-  const stacked = maxSquareGridSize(metrics, false);
-  const beside = maxSquareGridSize(metrics, true);
+  const dimensions = {
+    width: metrics.width,
+    height: metrics.height,
+    labelAllowancePx: metrics.labelAllowancePx,
+  };
+  const stacked = maxSquareGridSize(dimensions, false, stackedGapPx());
+  const beside = maxSquareGridSize(dimensions, true, sideBySideGapPx());
   return beside > stacked;
 }
 
