@@ -10,11 +10,19 @@ import { Preferences, resetPreferencesMock } from "./test/mocks/preferences";
 
 vi.mock("@capacitor/preferences", () => import("./test/mocks/preferences"));
 
+import { vibrateTimeExpired } from "./platform/vibration";
 import { App } from "./App";
+
+vi.mock("./platform/vibration", () => ({
+  vibrateMatch: vi.fn(),
+  vibrateToggleOn: vi.fn(),
+  vibrateTimeExpired: vi.fn(),
+}));
 
 describe("App", () => {
   beforeEach(() => {
     resetPreferencesMock();
+    vi.mocked(vibrateTimeExpired).mockClear();
   });
 
   it("navigates title to settings and high scores", async () => {
@@ -72,6 +80,54 @@ describe("App", () => {
     });
   });
 
+  it("vibrates on timeout when vibration enabled", async () => {
+    await Preferences.set({
+      key: "copy-quatre:settings",
+      value: JSON.stringify({ ...DEFAULT_SETTINGS, timeLimitSec: 30, vibration: true }),
+    });
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    await vi.advanceTimersByTimeAsync(31000);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Time's Up!" })).toBeInTheDocument();
+    });
+    expect(vibrateTimeExpired).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("skips timeout vibration when vibration disabled", async () => {
+    await Preferences.set({
+      key: "copy-quatre:settings",
+      value: JSON.stringify({ ...DEFAULT_SETTINGS, vibration: false, timeLimitSec: 30 }),
+    });
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    await vi.advanceTimersByTimeAsync(31000);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Time's Up!" })).toBeInTheDocument();
+    });
+    expect(vibrateTimeExpired).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
   it("quit during play records score and shows game over", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -83,6 +139,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Start" }));
     await user.click(screen.getByRole("button", { name: "Quit" }));
 
+    expect(vibrateTimeExpired).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "Time's Up!" })).toBeInTheDocument();
     expect(screen.getByText("Score: 0")).toBeInTheDocument();
   });

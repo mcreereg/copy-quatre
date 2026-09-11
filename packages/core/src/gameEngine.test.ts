@@ -20,7 +20,9 @@ describe("gameEngine", () => {
     engine.dispatch({ type: "START", settings: { ...DEFAULT_SETTINGS, timeLimitSec: 30 } });
     const events = engine.dispatch({ type: "TICK", dtMs: 30000 });
     expect(engine.getState().phase).toBe("gameover");
-    expect(events.some((e) => e.type === "GAME_OVER")).toBe(true);
+    expect(events).toEqual([
+      { type: "GAME_OVER", score: 0, isHighScore: false, reason: "timeout" },
+    ]);
   });
 
   it("ignores pause and resume when not applicable", () => {
@@ -59,7 +61,9 @@ describe("gameEngine", () => {
     const events = engine.dispatch({ type: "QUIT" });
     expect(engine.getState().phase).toBe("gameover");
     expect(engine.getState().score).toBe(1);
-    expect(events).toEqual([{ type: "GAME_OVER", score: 1, isHighScore: false }]);
+    expect(events).toEqual([
+      { type: "GAME_OVER", score: 1, isHighScore: false, reason: "quit" },
+    ]);
   });
 
   it("quit from pause records current score", () => {
@@ -68,7 +72,9 @@ describe("gameEngine", () => {
     engine.dispatch({ type: "PAUSE" });
     const events = engine.dispatch({ type: "QUIT" });
     expect(engine.getState().phase).toBe("gameover");
-    expect(events).toEqual([{ type: "GAME_OVER", score: 0, isHighScore: false }]);
+    expect(events).toEqual([
+      { type: "GAME_OVER", score: 0, isHighScore: false, reason: "quit" },
+    ]);
   });
 
   it("ignores quit when not in a session", () => {

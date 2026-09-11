@@ -10,7 +10,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useGameEngine(onEvent?: (event: GameEvent) => void) {
   const engineRef = useRef<GameEngine | null>(null);
+  const onEventRef = useRef(onEvent);
   const [state, setState] = useState<GameState | null>(null);
+
+  onEventRef.current = onEvent;
 
   if (!engineRef.current) {
     engineRef.current = createGameEngine(createRng(Date.now()));
@@ -21,10 +24,10 @@ export function useGameEngine(onEvent?: (event: GameEvent) => void) {
       const engine = engineRef.current!;
       const events = engine.dispatch(action);
       setState(engine.getState());
-      events.forEach((e) => onEvent?.(e));
+      events.forEach((e) => onEventRef.current?.(e));
       return events;
     },
-    [onEvent],
+    [],
   );
 
   useEffect(() => {
@@ -38,14 +41,14 @@ export function useGameEngine(onEvent?: (event: GameEvent) => void) {
         const engine = engineRef.current!;
         const events = engine.dispatch({ type: "TICK", dtMs: dt });
         setState(engine.getState());
-        events.forEach((e) => onEvent?.(e));
+        events.forEach((e) => onEventRef.current?.(e));
       }
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [onEvent]);
+  }, []);
 
   return { state, dispatch };
 }

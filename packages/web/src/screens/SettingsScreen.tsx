@@ -10,6 +10,7 @@ import {
 import { Button } from "../components/Button";
 import { SlideToggle } from "../components/SlideToggle";
 import { Stepper } from "../components/Stepper";
+import { vibrateToggleOn } from "../platform/vibration";
 
 type SettingsScreenProps = {
   settings: Settings;
@@ -79,7 +80,10 @@ export function SettingsScreen({
           <span className="stepper-label">Vibration</span>
           <SlideToggle
             checked={settings.vibration}
-            onChange={(vibration) => onChange({ ...settings, vibration })}
+            onChange={(vibration) => {
+              if (vibration) vibrateToggleOn();
+              onChange({ ...settings, vibration });
+            }}
             label="Vibration"
           />
         </div>
