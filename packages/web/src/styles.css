@@ -391,11 +391,9 @@ body {
   max-width: 700px;
 }
 
-@media (min-width: 640px) and (min-aspect-ratio: 1/1) {
-  .grids-container {
-    flex-direction: row;
-    align-items: stretch;
-  }
+.play-screen .grids-container.grids-side-by-side {
+  flex-direction: row;
+  align-items: stretch;
 }
 
 .grid-wrapper {

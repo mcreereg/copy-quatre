@@ -70,7 +70,7 @@ describe("useExplodeAnimation spawn settings", () => {
     const referenceGridRef = { current: mockGridElement(0, 0, 2, 20) };
     const interactiveGridRef = { current: mockGridElement(120, 0, 2, 20) };
     const { result } = renderHook(() =>
-      useExplodeAnimation(referenceGridRef, interactiveGridRef, animations),
+      useExplodeAnimation(referenceGridRef, interactiveGridRef, animations, false),
     );
 
     const expected = expectedExplosionEffects(animations);
