@@ -1,6 +1,6 @@
 # Copy Quatre
 
-Grid matching game — copy the reference pattern before time runs out.
+Grid matching game
 
 ## Setup
 
