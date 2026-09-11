@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  MATCH_VIBRATION_AMPLITUDES,
   MATCH_VIBRATION_PATTERN,
+  MATCH_VIBRATION_TIMINGS,
   TIME_EXPIRED_VIBRATION_PATTERN,
   TOGGLE_ON_VIBRATION_MS,
   vibrateMatch,
@@ -8,17 +10,66 @@ import {
   vibrateToggleOn,
 } from "./vibration";
 
+const { getPlatformMock, vibrateWaveformMock } = vi.hoisted(() => ({
+  getPlatformMock: vi.fn(() => "web"),
+  vibrateWaveformMock: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock("@capacitor/core", () => ({
+  Capacitor: {
+    getPlatform: getPlatformMock,
+  },
+}));
+
+vi.mock("./nativeVibration", () => ({
+  NativeVibration: {
+    vibrateWaveform: vibrateWaveformMock,
+  },
+}));
+
 describe("vibrateMatch", () => {
+  beforeEach(() => {
+    getPlatformMock.mockReturnValue("web");
+    vibrateWaveformMock.mockClear();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("calls navigator.vibrate with decreasing pulse pattern", () => {
+  it("calls navigator.vibrate with decreasing pulse pattern on web", () => {
     const vibrate = vi.fn();
     vi.stubGlobal("navigator", { vibrate });
 
     vibrateMatch();
 
+    expect(vibrate).toHaveBeenCalledOnce();
+    expect(vibrate).toHaveBeenCalledWith(MATCH_VIBRATION_PATTERN);
+    expect(vibrateWaveformMock).not.toHaveBeenCalled();
+  });
+
+  it("calls native waveform on android", () => {
+    getPlatformMock.mockReturnValue("android");
+
+    vibrateMatch();
+
+    expect(vibrateWaveformMock).toHaveBeenCalledOnce();
+    expect(vibrateWaveformMock).toHaveBeenCalledWith({
+      timings: MATCH_VIBRATION_TIMINGS,
+      amplitudes: MATCH_VIBRATION_AMPLITUDES,
+    });
+  });
+
+  it("falls back to web pattern when native waveform fails on android", async () => {
+    getPlatformMock.mockReturnValue("android");
+    vibrateWaveformMock.mockRejectedValueOnce(new Error("native unavailable"));
+    const vibrate = vi.fn();
+    vi.stubGlobal("navigator", { vibrate });
+
+    vibrateMatch();
+    await Promise.resolve();
+
+    expect(vibrateWaveformMock).toHaveBeenCalledOnce();
     expect(vibrate).toHaveBeenCalledOnce();
     expect(vibrate).toHaveBeenCalledWith(MATCH_VIBRATION_PATTERN);
   });
