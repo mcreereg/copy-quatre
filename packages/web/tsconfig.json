@@ -17,7 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@graphics/*": ["../../graphics/*"]
+      "@graphics/*": ["../../graphics/*"],
+      "@repo-root/*": ["../../*"]
     }
   },
   "include": ["src"]

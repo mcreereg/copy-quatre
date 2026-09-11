@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@graphics": path.resolve(__dirname, "../../graphics"),
+      "@repo-root": path.resolve(__dirname, "../.."),
     },
   },
   server: {

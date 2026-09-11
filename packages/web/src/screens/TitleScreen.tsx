@@ -5,9 +5,15 @@ type TitleScreenProps = {
   onStart: () => void;
   onSettings: () => void;
   onHighScores: () => void;
+  onAiDisclosure: () => void;
 };
 
-export function TitleScreen({ onStart, onSettings, onHighScores }: TitleScreenProps) {
+export function TitleScreen({
+  onStart,
+  onSettings,
+  onHighScores,
+  onAiDisclosure,
+}: TitleScreenProps) {
   return (
     <div className="screen title-screen">
       <img
@@ -21,6 +27,7 @@ export function TitleScreen({ onStart, onSettings, onHighScores }: TitleScreenPr
         <Button onClick={onStart}>Start</Button>
         <Button variant="secondary" onClick={onSettings}>Settings</Button>
         <Button variant="secondary" onClick={onHighScores}>High Scores</Button>
+        <Button variant="secondary" onClick={onAiDisclosure}>AI Disclosure</Button>
       </div>
     </div>
   );
