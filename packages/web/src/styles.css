@@ -37,6 +37,17 @@ body {
   position: relative;
 }
 
+.title-screen {
+  overflow-y: auto;
+}
+
+.title-hero {
+  width: min(280px, 85vw);
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
 .title {
   font-size: 2.5rem;
   color: var(--accent);
