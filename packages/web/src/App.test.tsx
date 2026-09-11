@@ -83,7 +83,7 @@ describe("App", () => {
   it("vibrates on timeout when vibration enabled", async () => {
     await Preferences.set({
       key: "copy-quatre:settings",
-      value: JSON.stringify({ ...DEFAULT_SETTINGS, timeLimitSec: 30 }),
+      value: JSON.stringify({ ...DEFAULT_SETTINGS, timeLimitSec: 30, vibration: true }),
     });
 
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -98,8 +98,9 @@ describe("App", () => {
     await vi.advanceTimersByTimeAsync(31000);
 
     await waitFor(() => {
-      expect(vibrateTimeExpired).toHaveBeenCalledOnce();
+      expect(screen.getByRole("heading", { name: "Time's Up!" })).toBeInTheDocument();
     });
+    expect(vibrateTimeExpired).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });
 

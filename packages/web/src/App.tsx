@@ -8,7 +8,7 @@ import {
   type HighScoreStore,
   type Settings,
 } from "@copy-quatre/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameEngine } from "./hooks/useGameEngine";
 import { loadHighScores, loadSettings, saveHighScores, saveSettings } from "./platform/storage";
 import { vibrateTimeExpired } from "./platform/vibration";
@@ -37,6 +37,11 @@ export function App() {
   const [highScores, setHighScores] = useState<HighScoreStore>({});
   const [finalScore, setFinalScore] = useState(0);
   const [isHighScore, setIsHighScore] = useState(false);
+  const settingsRef = useRef(settings);
+  const highScoresRef = useRef(highScores);
+
+  settingsRef.current = settings;
+  highScoresRef.current = highScores;
 
   useEffect(() => {
     let cancelled = false;
@@ -53,26 +58,24 @@ export function App() {
     };
   }, []);
 
-  const handleEvent = useCallback(
-    (event: GameEvent) => {
-      if (event.type === "GAME_OVER") {
-        if (event.reason === "timeout" && settings.vibration) {
-          vibrateTimeExpired();
-        }
-        const { store, isHighScore: newRecord } = updateHighScore(
-          highScores,
-          settings,
-          event.score,
-        );
-        setHighScores(store);
-        setFinalScore(event.score);
-        setIsHighScore(newRecord);
-        setScreen("gameover");
-        void saveHighScores(store);
+  const handleEvent = useCallback((event: GameEvent) => {
+    if (event.type === "GAME_OVER") {
+      const currentSettings = settingsRef.current;
+      if (event.reason === "timeout" && currentSettings.vibration) {
+        vibrateTimeExpired();
       }
-    },
-    [highScores, settings],
-  );
+      const { store, isHighScore: newRecord } = updateHighScore(
+        highScoresRef.current,
+        currentSettings,
+        event.score,
+      );
+      setHighScores(store);
+      setFinalScore(event.score);
+      setIsHighScore(newRecord);
+      setScreen("gameover");
+      void saveHighScores(store);
+    }
+  }, []);
 
   const { state, dispatch } = useGameEngine(handleEvent);
 
