@@ -7,7 +7,6 @@ import {
 } from "../components/gridShake.js";
 import {
   buildExplosion,
-  GRIDS_SIDE_BY_SIDE_QUERY,
   MIDLINE_DURATION_MS,
   stepFlyingCell,
   type FlyingCell,
@@ -20,6 +19,7 @@ export function useExplodeAnimation(
   referenceGridRef: RefObject<HTMLDivElement | null>,
   interactiveGridRef: RefObject<HTMLDivElement | null>,
   animations: AnimationSettings,
+  sideBySide: boolean,
 ) {
   const [cells, setCells] = useState<FlyingCell[]>([]);
   const [midlines, setMidlines] = useState<MidlineBlast[]>([]);
@@ -86,7 +86,6 @@ export function useExplodeAnimation(
       const interactiveEl = interactiveGridRef.current;
       if (!referenceEl || !interactiveEl) return;
 
-      const sideBySide = window.matchMedia(GRIDS_SIDE_BY_SIDE_QUERY).matches;
       const blastId = nextBlastId++;
       const rng = Math.random;
 
@@ -132,7 +131,7 @@ export function useExplodeAnimation(
         timeoutsRef.current.push(midlineTimeoutId);
       }
     },
-    [animations, interactiveGridRef, referenceGridRef, startLoop],
+    [animations, interactiveGridRef, referenceGridRef, sideBySide, startLoop],
   );
 
   return { cells, midlines, shakes, spawn };

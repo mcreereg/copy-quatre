@@ -9,6 +9,7 @@ import { Button } from "../components/Button";
 import { ExplodeLayer } from "../components/ExplodeLayer";
 import { Grid } from "../components/Grid";
 import { useExplodeAnimation } from "../hooks/useExplodeAnimation";
+import { useGridLayout } from "../hooks/useGridLayout";
 import { vibrateMatch } from "../platform/vibration";
 
 type PlayScreenProps = {
@@ -47,12 +48,15 @@ export function PlayScreen({
   onQuit,
 }: PlayScreenProps) {
   const paused = state.phase === "paused";
+  const playScreenRef = useRef<HTMLDivElement>(null);
   const referenceGridRef = useRef<HTMLDivElement>(null);
   const interactiveGridRef = useRef<HTMLDivElement>(null);
+  const sideBySide = useGridLayout(playScreenRef, !paused);
   const { cells, midlines, shakes, spawn } = useExplodeAnimation(
     referenceGridRef,
     interactiveGridRef,
     state.settings.animations,
+    sideBySide,
   );
   const cellOnBlink = isAnimationActive(state.settings, "cellOnBlink");
   const cellOffBlink = isAnimationActive(state.settings, "cellOffBlink");
@@ -78,7 +82,7 @@ export function PlayScreen({
   }, [dispatch]);
 
   return (
-    <div className="screen play-screen">
+    <div className="screen play-screen" ref={playScreenRef}>
       <ExplodeLayer cells={cells} midlines={midlines} />
 
       <div className="hud">
@@ -106,7 +110,7 @@ export function PlayScreen({
       )}
 
       {!paused && (
-        <div className="grids-container">
+        <div className={`grids-container${sideBySide ? " grids-side-by-side" : ""}`}>
           <Grid
             grid={state.reference}
             label="Copy this"

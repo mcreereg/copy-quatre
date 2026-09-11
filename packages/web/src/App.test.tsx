@@ -43,6 +43,12 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "High Scores" }));
     expect(screen.getByRole("heading", { name: "High Scores" })).toBeInTheDocument();
     expect(screen.getByText("0")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await user.click(screen.getByRole("button", { name: "AI Disclosure" }));
+    expect(screen.getByRole("heading", { name: "AI Disclosure" })).toBeInTheDocument();
+    expect(screen.getByText(/All code in this repository is AI-generated/)).toBeInTheDocument();
+    expect(screen.getByText(/Most graphics are AI-generated/)).toBeInTheDocument();
   });
 
   it.each(

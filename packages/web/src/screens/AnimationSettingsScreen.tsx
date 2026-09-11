@@ -12,8 +12,8 @@ const ANIMATION_ROWS: { id: AnimationId; label: string }[] = [
   { id: "lineFlash", label: "Line flash" },
   { id: "flyingTiles", label: "Flying tiles" },
   { id: "rattlingTiles", label: "Rattling tiles" },
-  { id: "cellOnBlink", label: "Cell on blink" },
-  { id: "cellOffBlink", label: "Cell off blink" },
+  { id: "cellOnBlink", label: "Cell blink on" },
+  { id: "cellOffBlink", label: "Cell blink off" },
 ];
 
 export function AnimationSettingsScreen({

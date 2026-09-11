@@ -16,10 +16,18 @@ import { HighScoresScreen } from "./screens/HighScoresScreen";
 import { PlayScreen } from "./screens/PlayScreen";
 import { AnimationSettingsScreen } from "./screens/AnimationSettingsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
+import { AiDisclosureScreen } from "./screens/AiDisclosureScreen";
 import { TitleScreen } from "./screens/TitleScreen";
 import "./styles.css";
 
-type Screen = "title" | "settings" | "animations" | "highscores" | "playing" | "gameover";
+type Screen =
+  | "title"
+  | "settings"
+  | "animations"
+  | "highscores"
+  | "aidisclosure"
+  | "playing"
+  | "gameover";
 
 export function App() {
   const [screen, setScreen] = useState<Screen>("title");
@@ -104,7 +112,11 @@ export function App() {
           onStart={handleStart}
           onSettings={() => setScreen("settings")}
           onHighScores={() => setScreen("highscores")}
+          onAiDisclosure={() => setScreen("aidisclosure")}
         />
+      )}
+      {screen === "aidisclosure" && (
+        <AiDisclosureScreen onBack={() => setScreen("title")} />
       )}
       {screen === "settings" && (
         <SettingsScreen
