@@ -86,6 +86,7 @@ export function SettingsScreen({
           </Button>
         </div>
       </div>
+      <hr className="settings-divider" aria-hidden="true" />
       <h3 className="settings-section-heading">Global</h3>
       <div className="settings-list">
         <div className="setting-row">
