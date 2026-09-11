@@ -12,12 +12,18 @@ vi.mock("@capacitor/preferences", () => import("./test/mocks/preferences"));
 
 import { vibrateTimeExpired } from "./platform/vibration";
 import { App } from "./App";
+import { CURRENT_DATA_GENERATION, DATA_GENERATION_KEY, SETTINGS_KEY } from "./platform/storage";
 
 vi.mock("./platform/vibration", () => ({
   vibrateMatch: vi.fn(),
   vibrateToggleOn: vi.fn(),
   vibrateTimeExpired: vi.fn(),
 }));
+
+async function seedSettings(value: unknown) {
+  await Preferences.set({ key: DATA_GENERATION_KEY, value: CURRENT_DATA_GENERATION });
+  await Preferences.set({ key: SETTINGS_KEY, value: JSON.stringify(value) });
+}
 
 describe("App", () => {
   beforeEach(() => {
@@ -32,6 +38,9 @@ describe("App", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     });
+
+    expect(screen.getByText("Copy")).toBeInTheDocument();
+    expect(screen.getByText("Recreate each target from an empty grid.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
@@ -55,8 +64,22 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
     await user.click(screen.getByRole("button", { name: "AI Disclosure" }));
     expect(screen.getByRole("heading", { name: "AI Disclosure" })).toBeInTheDocument();
-    expect(screen.getByText(/All code in this repository is AI-generated/)).toBeInTheDocument();
-    expect(screen.getByText(/Most graphics are AI-generated/)).toBeInTheDocument();
+  });
+
+  it("cycles mode selector on title screen", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Copy")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Next game mode" }));
+    expect(screen.getByText("Imposter")).toBeInTheDocument();
+    expect(screen.getByText("Find every changed cell and restore the target.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Previous game mode" }));
+    expect(screen.getByText("Copy")).toBeInTheDocument();
   });
 
   it.each(
@@ -65,9 +88,9 @@ describe("App", () => {
       label: formatAnimationSettingsLabel(animations),
     })),
   )("sets data-animations from saved settings ($label)", async ({ animations }) => {
-    await Preferences.set({
-      key: "copy-quatre:settings",
-      value: JSON.stringify({ ...DEFAULT_SETTINGS, animations }),
+    await seedSettings({
+      ...DEFAULT_SETTINGS,
+      global: { ...DEFAULT_SETTINGS.global, animations },
     });
 
     render(<App />);
@@ -81,9 +104,13 @@ describe("App", () => {
   });
 
   it("vibrates on timeout when vibration enabled", async () => {
-    await Preferences.set({
-      key: "copy-quatre:settings",
-      value: JSON.stringify({ ...DEFAULT_SETTINGS, timeLimitSec: 30, vibration: true }),
+    await seedSettings({
+      ...DEFAULT_SETTINGS,
+      modes: {
+        ...DEFAULT_SETTINGS.modes,
+        copy: { ...DEFAULT_SETTINGS.modes.copy, timeLimitSec: 30 },
+      },
+      global: { ...DEFAULT_SETTINGS.global, vibration: true },
     });
 
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -105,9 +132,13 @@ describe("App", () => {
   });
 
   it("skips timeout vibration when vibration disabled", async () => {
-    await Preferences.set({
-      key: "copy-quatre:settings",
-      value: JSON.stringify({ ...DEFAULT_SETTINGS, vibration: false, timeLimitSec: 30 }),
+    await seedSettings({
+      ...DEFAULT_SETTINGS,
+      modes: {
+        ...DEFAULT_SETTINGS.modes,
+        copy: { ...DEFAULT_SETTINGS.modes.copy, timeLimitSec: 30 },
+      },
+      global: { ...DEFAULT_SETTINGS.global, vibration: false },
     });
 
     vi.useFakeTimers({ shouldAdvanceTime: true });

@@ -1,4 +1,5 @@
 import {
+  getGameMode,
   isAnimationActive,
   type GameAction,
   type GameEvent,
@@ -48,6 +49,7 @@ export function PlayScreen({
   onQuit,
 }: PlayScreenProps) {
   const paused = state.phase === "paused";
+  const mode = getGameMode(state.settings.mode);
   const playScreenRef = useRef<HTMLDivElement>(null);
   const referenceGridRef = useRef<HTMLDivElement>(null);
   const interactiveGridRef = useRef<HTMLDivElement>(null);
@@ -58,8 +60,8 @@ export function PlayScreen({
     state.settings.animations,
     sideBySide,
   );
-  const cellOnBlink = isAnimationActive(state.settings, "cellOnBlink");
-  const cellOffBlink = isAnimationActive(state.settings, "cellOffBlink");
+  const cellOnBlink = isAnimationActive(state.settings.animations, "cellOnBlink");
+  const cellOffBlink = isAnimationActive(state.settings.animations, "cellOffBlink");
 
   const handlePointerDown = useCallback(
     (row: number, col: number) => {
@@ -113,14 +115,14 @@ export function PlayScreen({
         <div className={`grids-container${sideBySide ? " grids-side-by-side" : ""}`}>
           <Grid
             grid={state.reference}
-            label="Copy this"
+            label={mode.referenceLabel}
             gridRef={referenceGridRef}
             shakeSpecs={shakes?.ref}
           />
           <Grid
             grid={state.interactive}
             interactive
-            label="Your grid"
+            label={mode.interactiveLabel}
             gridRef={interactiveGridRef}
             shakeSpecs={shakes?.int}
             cellOnBlink={cellOnBlink}

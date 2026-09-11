@@ -13,23 +13,44 @@ export type AnimationSettings = {
 
 export type AnimationId = keyof Omit<AnimationSettings, "enabled">;
 
-export type Settings = {
+export type GameModeId = "copy" | "imposter";
+
+export type GameplaySettings = {
   timeLimitSec: number;
   gridSize: number;
   patternStyle: PatternStyle;
+};
+
+export type GlobalSettings = {
   theme: ThemeId;
   colorMode: ColorMode;
   vibration: boolean;
   animations: AnimationSettings;
 };
 
+export type Settings = {
+  selectedMode: GameModeId;
+  global: GlobalSettings;
+  modes: Record<GameModeId, GameplaySettings>;
+};
+
+export type SessionSettings = GlobalSettings &
+  GameplaySettings & {
+    mode: GameModeId;
+  };
+
 export type Grid = boolean[][];
 
 export type GamePhase = "playing" | "paused" | "gameover";
 
+export type GameRound = {
+  reference: Grid;
+  interactive: Grid;
+};
+
 export type GameState = {
   phase: GamePhase;
-  settings: Settings;
+  settings: SessionSettings;
   reference: Grid;
   interactive: Grid;
   score: number;
@@ -40,6 +61,18 @@ export type GameOverReason = "timeout" | "quit";
 
 export type GameEvent =
   | { type: "SCORED"; score: number; matchedReference: Grid; matchedInteractive: Grid }
-  | { type: "GAME_OVER"; score: number; isHighScore: boolean; reason: GameOverReason };
+  | {
+      type: "GAME_OVER";
+      score: number;
+      reason: GameOverReason;
+      sessionSettings: SessionSettings;
+    }
+  | {
+      type: "GENERATION_FAILED";
+      stage: "start" | "round-advance";
+      message: string;
+      score: number;
+      sessionSettings: SessionSettings;
+    };
 
 export type HighScoreStore = Record<string, number>;

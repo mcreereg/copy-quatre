@@ -1,11 +1,12 @@
 import { allOff, gridHash, gridsEqual, setCell, toggleCell } from "./grid.js";
-import { generatePattern } from "./pattern/index.js";
+import { getGameMode } from "./modes/registry.js";
+import type { GameRound } from "./types.js";
 import type { Rng } from "./rng.js";
-import { DEFAULT_SETTINGS } from "./settings.js";
-import type { GameEvent, GameState, Grid, Settings } from "./types.js";
+import { DEFAULT_SETTINGS, resolveSessionSettings } from "./settings.js";
+import type { GameEvent, GameState, SessionSettings } from "./types.js";
 
 export type GameAction =
-  | { type: "START"; settings: Settings }
+  | { type: "START"; settings: SessionSettings }
   | { type: "TICK"; dtMs: number }
   | { type: "PAUSE" }
   | { type: "RESUME" }
@@ -26,9 +27,10 @@ export type GameEngine = {
 };
 
 function createInitialState(): GameState {
+  const session = resolveSessionSettings(DEFAULT_SETTINGS);
   return {
     phase: "gameover",
-    settings: DEFAULT_SETTINGS,
+    settings: session,
     reference: allOff(4),
     interactive: allOff(4),
     score: 0,
@@ -44,34 +46,70 @@ function cellKey(row: number, col: number): string {
   return `${row},${col}`;
 }
 
-function pregenerateNextReference(settings: Settings, current: Grid, rng: Rng): Grid {
-  return generatePattern(
-    settings.patternStyle,
-    settings.gridSize,
-    rng,
-    gridHash(current),
-  );
+function createRound(
+  settings: SessionSettings,
+  rng: Rng,
+  avoidReferenceHash?: string,
+): GameRound {
+  const mode = getGameMode(settings.mode);
+  return mode.createRound({ settings, rng, avoidReferenceHash });
 }
 
-function startGame(settings: Settings, rng: Rng): { state: GameState; nextReference: Grid } {
-  const reference = generatePattern(settings.patternStyle, settings.gridSize, rng);
+function tryPregenerateNextRound(
+  settings: SessionSettings,
+  currentReference: GameRound["reference"],
+  rng: Rng,
+): GameRound | null {
+  try {
+    return createRound(settings, rng, gridHash(currentReference));
+  } catch {
+    return null;
+  }
+}
+
+function startGame(
+  settings: SessionSettings,
+  rng: Rng,
+): { state: GameState; events: GameEvent[]; nextRound: GameRound | null } {
+  let round: GameRound;
+  try {
+    round = createRound(settings, rng);
+  } catch (error) {
+    return {
+      state: createInitialState(),
+      events: [
+        {
+          type: "GENERATION_FAILED",
+          stage: "start",
+          message: error instanceof Error ? error.message : "Generation failed",
+          score: 0,
+          sessionSettings: settings,
+        },
+      ],
+      nextRound: null,
+    };
+  }
+
+  const nextRound = tryPregenerateNextRound(settings, round.reference, rng);
+
   return {
     state: {
       phase: "playing",
       settings,
-      reference,
-      interactive: allOff(settings.gridSize),
+      reference: round.reference,
+      interactive: round.interactive,
       score: 0,
       timeRemainingMs: settings.timeLimitSec * 1000,
     },
-    nextReference: pregenerateNextReference(settings, reference, rng),
+    events: [],
+    nextRound,
   };
 }
 
 export function createGameEngine(rng: Rng): GameEngine {
   let state: GameState = createInitialState();
   let stroke: StrokeState = createStroke();
-  let nextReference: Grid | null = null;
+  let nextRound: GameRound | null = null;
 
   function getState(): GameState {
     return state;
@@ -84,8 +122,9 @@ export function createGameEngine(rng: Rng): GameEngine {
       case "START": {
         const started = startGame(action.settings, rng);
         state = started.state;
-        nextReference = started.nextReference;
+        nextRound = started.nextRound;
         stroke = createStroke();
+        events.push(...started.events);
         break;
       }
 
@@ -111,8 +150,8 @@ export function createGameEngine(rng: Rng): GameEngine {
           events.push({
             type: "GAME_OVER",
             score: state.score,
-            isHighScore: false,
             reason: "quit",
+            sessionSettings: state.settings,
           });
         }
         break;
@@ -147,8 +186,8 @@ export function createGameEngine(rng: Rng): GameEngine {
         events.push({
           type: "GAME_OVER",
           score: state.score,
-          isHighScore: false,
           reason: "timeout",
+          sessionSettings: state.settings,
         });
       } else {
         state = { ...state, timeRemainingMs: remaining };
@@ -188,18 +227,44 @@ export function createGameEngine(rng: Rng): GameEngine {
     const matchedReference = state.reference;
     const matchedInteractive = state.interactive;
     const newScore = state.score + 1;
-    const reference =
-      nextReference ??
-      pregenerateNextReference(state.settings, state.reference, rng);
-    nextReference = pregenerateNextReference(state.settings, reference, rng);
+
+    let round = nextRound;
+    if (!round) {
+      try {
+        round = createRound(state.settings, rng, gridHash(state.reference));
+      } catch (error) {
+        state = {
+          ...state,
+          score: newScore,
+          phase: "gameover",
+        };
+        stroke = createStroke();
+        events.push({
+          type: "SCORED",
+          score: newScore,
+          matchedReference,
+          matchedInteractive,
+        });
+        events.push({
+          type: "GENERATION_FAILED",
+          stage: "round-advance",
+          message: error instanceof Error ? error.message : "Generation failed",
+          score: newScore,
+          sessionSettings: state.settings,
+        });
+        nextRound = null;
+        return;
+      }
+    }
 
     state = {
       ...state,
       score: newScore,
-      reference,
-      interactive: allOff(state.settings.gridSize),
+      reference: round.reference,
+      interactive: round.interactive,
     };
     stroke = createStroke();
+    nextRound = tryPregenerateNextRound(state.settings, round.reference, rng);
 
     events.push({
       type: "SCORED",

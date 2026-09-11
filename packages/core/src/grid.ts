@@ -11,6 +11,10 @@ export function allOff(size: number): Grid {
   return createGrid(size, false);
 }
 
+export function cloneGrid(grid: Grid): Grid {
+  return grid.map((row) => [...row]);
+}
+
 export function isInBounds(grid: Grid, row: number, col: number): boolean {
   return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length;
 }

@@ -1,4 +1,10 @@
-import { allOff, DEFAULT_SETTINGS, type GameEvent, type GameState } from "@copy-quatre/core";
+import {
+  allOff,
+  resolveSessionSettings,
+  type GameEvent,
+  type GameState,
+  type SessionSettings,
+} from "@copy-quatre/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,10 +15,31 @@ vi.mock("../platform/vibration", () => ({
   vibrateMatch: vi.fn(),
 }));
 
-function makeState(overrides: Partial<GameState> = {}): GameState {
+const baseSession = resolveSessionSettings({
+  selectedMode: "copy",
+  global: {
+    theme: "yellow",
+    colorMode: "dark",
+    vibration: true,
+    animations: {
+      enabled: true,
+      lineFlash: true,
+      flyingTiles: true,
+      rattlingTiles: true,
+      cellOnBlink: true,
+      cellOffBlink: true,
+    },
+  },
+  modes: {
+    copy: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
+    imposter: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
+  },
+});
+
+function makeState(overrides: Partial<GameState> & { settings?: SessionSettings } = {}): GameState {
   return {
     phase: "playing",
-    settings: DEFAULT_SETTINGS,
+    settings: baseSession,
     reference: allOff(4),
     interactive: allOff(4),
     score: 0,
@@ -49,7 +76,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState({
-          settings: { ...DEFAULT_SETTINGS, gridSize: 2, vibration: true },
+          settings: { ...baseSession, gridSize: 2, vibration: true },
           reference,
           interactive,
         })}
@@ -84,7 +111,7 @@ describe("PlayScreen", () => {
     const { container } = render(
       <PlayScreen
         state={makeState({
-          settings: { ...DEFAULT_SETTINGS, gridSize: 2, vibration: false },
+          settings: { ...baseSession, gridSize: 2, vibration: false },
           reference,
           interactive,
         })}
