@@ -1,5 +1,4 @@
 import { cycleGameMode, getGameMode, type GameModeId } from "@copy-quatre/core";
-import { Button } from "./Button";
 
 type ModeSelectorProps = {
   selectedMode: GameModeId;
@@ -12,23 +11,25 @@ export function ModeSelector({ selectedMode, onChange }: ModeSelectorProps) {
   return (
     <div className="mode-selector">
       <div className="mode-selector-controls">
-        <Button
-          variant="secondary"
+        <button
+          type="button"
+          className="stepper-btn"
           aria-label="Previous game mode"
           onClick={() => onChange(cycleGameMode(selectedMode, -1))}
         >
-          Previous
-        </Button>
+          {"<"}
+        </button>
         <span className="mode-selector-name" aria-live="polite">
           {mode.name}
         </span>
-        <Button
-          variant="secondary"
+        <button
+          type="button"
+          className="stepper-btn"
           aria-label="Next game mode"
           onClick={() => onChange(cycleGameMode(selectedMode, 1))}
         >
-          Next
-        </Button>
+          {">"}
+        </button>
       </div>
       <p className="mode-selector-description">{mode.description}</p>
     </div>
