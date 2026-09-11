@@ -2,12 +2,15 @@ import {
   cyclePatternStyle,
   cycleTheme,
   formatTimeLimit,
+  getGameMode,
   stepGridSize,
   stepTimeLimitSec,
   toggleColorMode,
+  type GameModeId,
   type Settings,
 } from "@copy-quatre/core";
 import { Button } from "../components/Button";
+import { ModeSelector } from "../components/ModeSelector";
 import { SlideToggle } from "../components/SlideToggle";
 import { Stepper } from "../components/Stepper";
 import { vibrateToggleOn } from "../platform/vibration";
@@ -25,64 +28,91 @@ export function SettingsScreen({
   onCustomizeAnimations,
   onBack,
 }: SettingsScreenProps) {
+  const mode = getGameMode(settings.selectedMode);
+  const profile = settings.modes[settings.selectedMode];
+
+  const updateProfile = (partial: Partial<typeof profile>) => {
+    onChange({
+      ...settings,
+      modes: {
+        ...settings.modes,
+        [settings.selectedMode]: { ...profile, ...partial },
+      },
+    });
+  };
+
+  const updateGlobal = (partial: Partial<Settings["global"]>) => {
+    onChange({
+      ...settings,
+      global: { ...settings.global, ...partial },
+    });
+  };
+
+  const handleModeChange = (selectedMode: GameModeId) => {
+    onChange({ ...settings, selectedMode });
+  };
+
   return (
     <div className="screen settings-screen">
       <h2>Settings</h2>
+      <ModeSelector selectedMode={settings.selectedMode} onChange={handleModeChange} />
+      <h3 className="settings-section-heading">{mode.name} game</h3>
       <div className="settings-list">
         <Stepper
           label="Time limit"
-          value={formatTimeLimit(settings.timeLimitSec)}
+          value={formatTimeLimit(profile.timeLimitSec)}
           onDecrement={() =>
-            onChange({ ...settings, timeLimitSec: stepTimeLimitSec(settings.timeLimitSec, -1) })
+            updateProfile({ timeLimitSec: stepTimeLimitSec(profile.timeLimitSec, -1) })
           }
           onIncrement={() =>
-            onChange({ ...settings, timeLimitSec: stepTimeLimitSec(settings.timeLimitSec, 1) })
+            updateProfile({ timeLimitSec: stepTimeLimitSec(profile.timeLimitSec, 1) })
           }
         />
         <Stepper
           label="Grid size"
-          value={`${settings.gridSize}×${settings.gridSize}`}
-          onDecrement={() =>
-            onChange({ ...settings, gridSize: stepGridSize(settings.gridSize, -1) })
-          }
-          onIncrement={() =>
-            onChange({ ...settings, gridSize: stepGridSize(settings.gridSize, 1) })
-          }
+          value={`${profile.gridSize}×${profile.gridSize}`}
+          onDecrement={() => updateProfile({ gridSize: stepGridSize(profile.gridSize, -1) })}
+          onIncrement={() => updateProfile({ gridSize: stepGridSize(profile.gridSize, 1) })}
         />
         <div className="setting-row">
           <span className="stepper-label">Pattern style</span>
           <Button
             variant="secondary"
-            onClick={() => onChange({ ...settings, patternStyle: cyclePatternStyle(settings.patternStyle) })}
+            onClick={() =>
+              updateProfile({ patternStyle: cyclePatternStyle(profile.patternStyle) })
+            }
           >
-            {settings.patternStyle}
+            {profile.patternStyle}
           </Button>
         </div>
+      </div>
+      <h3 className="settings-section-heading">Global</h3>
+      <div className="settings-list">
         <div className="setting-row">
           <span className="stepper-label">Color mode</span>
           <Button
             variant="secondary"
-            onClick={() => onChange({ ...settings, colorMode: toggleColorMode(settings.colorMode) })}
+            onClick={() => updateGlobal({ colorMode: toggleColorMode(settings.global.colorMode) })}
           >
-            {settings.colorMode}
+            {settings.global.colorMode}
           </Button>
         </div>
         <div className="setting-row">
           <span className="stepper-label">Color theme</span>
           <Button
             variant="secondary"
-            onClick={() => onChange({ ...settings, theme: cycleTheme(settings.theme) })}
+            onClick={() => updateGlobal({ theme: cycleTheme(settings.global.theme) })}
           >
-            {settings.theme}
+            {settings.global.theme}
           </Button>
         </div>
         <div className="setting-row">
           <span className="stepper-label">Vibration</span>
           <SlideToggle
-            checked={settings.vibration}
+            checked={settings.global.vibration}
             onChange={(vibration) => {
               if (vibration) vibrateToggleOn();
-              onChange({ ...settings, vibration });
+              updateGlobal({ vibration });
             }}
             label="Vibration"
           />
@@ -91,11 +121,10 @@ export function SettingsScreen({
           <span className="stepper-label">Animations</span>
           <div className="setting-row-controls">
             <SlideToggle
-              checked={settings.animations.enabled}
+              checked={settings.global.animations.enabled}
               onChange={(enabled) =>
-                onChange({
-                  ...settings,
-                  animations: { ...settings.animations, enabled },
+                updateGlobal({
+                  animations: { ...settings.global.animations, enabled },
                 })
               }
               label="Animations"

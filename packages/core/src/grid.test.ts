@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   allOff,
+  cloneGrid,
   countOn,
   createGrid,
   density,
@@ -27,6 +28,14 @@ describe("grid", () => {
   it("allOff creates all false", () => {
     const g = allOff(2);
     expect(hasAnyOn(g)).toBe(false);
+  });
+
+  it("cloneGrid copies without sharing rows", () => {
+    const original = allOff(2);
+    original[0][0] = true;
+    const copy = cloneGrid(original);
+    copy[0][0] = false;
+    expect(original[0][0]).toBe(true);
   });
 
   it("isInBounds", () => {

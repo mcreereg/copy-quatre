@@ -2,16 +2,25 @@ import {
   DEFAULT_SETTINGS,
   getHighScore,
   getThemeTokens,
+  resolveSessionSettings,
   updateHighScore,
   validateSettings,
   type GameEvent,
   type HighScoreStore,
+  type SessionSettings,
   type Settings,
 } from "@copy-quatre/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameEngine } from "./hooks/useGameEngine";
-import { loadHighScores, loadSettings, saveHighScores, saveSettings } from "./platform/storage";
+import {
+  initializeDataGeneration,
+  loadHighScores,
+  loadSettings,
+  saveHighScores,
+  saveSettings,
+} from "./platform/storage";
 import { vibrateTimeExpired } from "./platform/vibration";
+import { GameErrorScreen } from "./screens/GameErrorScreen";
 import { GameOverScreen } from "./screens/GameOverScreen";
 import { HighScoresScreen } from "./screens/HighScoresScreen";
 import { PlayScreen } from "./screens/PlayScreen";
@@ -28,60 +37,104 @@ type Screen =
   | "highscores"
   | "aidisclosure"
   | "playing"
-  | "gameover";
+  | "gameover"
+  | "gameerror";
 
 export function App() {
   const [screen, setScreen] = useState<Screen>("title");
   const [ready, setReady] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [highScores, setHighScores] = useState<HighScoreStore>({});
   const [finalScore, setFinalScore] = useState(0);
+  const [finalHighScore, setFinalHighScore] = useState(0);
   const [isHighScore, setIsHighScore] = useState(false);
+  const [gameError, setGameError] = useState<{ message: string; score?: number; session?: SessionSettings } | null>(null);
+  const [retrySession, setRetrySession] = useState<SessionSettings | null>(null);
   const settingsRef = useRef(settings);
   const highScoresRef = useRef(highScores);
 
   settingsRef.current = settings;
   highScoresRef.current = highScores;
 
+  const loadAppData = useCallback(async () => {
+    setBootstrapError(null);
+    try {
+      await initializeDataGeneration();
+      const [loadedSettings, loadedScores] = await Promise.all([
+        loadSettings(),
+        loadHighScores(),
+      ]);
+      setSettings(validateSettings(loadedSettings));
+      setHighScores(loadedScores);
+      setReady(true);
+    } catch (error) {
+      setReady(false);
+      setBootstrapError(
+        error instanceof Error ? error.message : "Couldn't initialize game data.",
+      );
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadSettings(DEFAULT_SETTINGS), loadHighScores()]).then(
-      ([loadedSettings, loadedScores]) => {
-        if (cancelled) return;
-        setSettings(validateSettings(loadedSettings));
-        setHighScores(loadedScores);
-        setReady(true);
-      },
-    );
+    void loadAppData().then(() => {
+      if (cancelled) return;
+    });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAppData]);
 
   const handleEvent = useCallback((event: GameEvent) => {
     if (event.type === "GAME_OVER") {
-      const currentSettings = settingsRef.current;
-      if (event.reason === "timeout" && currentSettings.vibration) {
+      const session = event.sessionSettings;
+      if (event.reason === "timeout" && session.vibration) {
         vibrateTimeExpired();
       }
       const { store, isHighScore: newRecord } = updateHighScore(
         highScoresRef.current,
-        currentSettings,
+        session,
         event.score,
       );
       setHighScores(store);
       setFinalScore(event.score);
+      setFinalHighScore(Math.max(getHighScore(store, session), event.score));
       setIsHighScore(newRecord);
       setScreen("gameover");
       void saveHighScores(store);
+      return;
+    }
+
+    if (event.type === "GENERATION_FAILED") {
+      if (event.stage === "round-advance") {
+        const { store } = updateHighScore(
+          highScoresRef.current,
+          event.sessionSettings,
+          event.score,
+        );
+        setHighScores(store);
+        void saveHighScores(store);
+      }
+
+      setGameError({
+        message:
+          event.stage === "round-advance"
+            ? "Couldn't generate the next puzzle."
+            : event.message,
+        score: event.stage === "round-advance" ? event.score : undefined,
+        session: event.sessionSettings,
+      });
+      setRetrySession(event.sessionSettings);
+      setScreen("gameerror");
     }
   }, []);
 
   const { state, dispatch } = useGameEngine(handleEvent);
 
   const themeTokens = useMemo(
-    () => getThemeTokens(settings.theme, settings.colorMode),
-    [settings.theme, settings.colorMode],
+    () => getThemeTokens(settings.global.theme, settings.global.colorMode),
+    [settings.global.theme, settings.global.colorMode],
   );
 
   useEffect(() => {
@@ -97,12 +150,47 @@ export function App() {
     void saveSettings(validated);
   };
 
+  const handleModeChange = (selectedMode: Settings["selectedMode"]) => {
+    handleSettingsChange({ ...settings, selectedMode });
+  };
+
   const handleStart = () => {
-    dispatch({ type: "START", settings });
+    const session = resolveSessionSettings(settings);
+    const events = dispatch({ type: "START", settings: session });
+    for (const event of events) {
+      handleEvent(event);
+    }
+    if (events.some((event) => event.type === "GENERATION_FAILED")) {
+      return;
+    }
     setScreen("playing");
   };
 
-  const currentHighScore = getHighScore(highScores, settings);
+  const handleGameErrorRetry = () => {
+    if (!retrySession) return;
+    if (gameError?.score !== undefined) {
+      dispatch({ type: "START", settings: retrySession });
+      setScreen("playing");
+      setGameError(null);
+      return;
+    }
+    handleStart();
+  };
+
+  if (bootstrapError) {
+    return (
+      <div className="app">
+        <GameErrorScreen
+          message={bootstrapError}
+          onRetry={() => void loadAppData()}
+          onBack={() => {
+            setBootstrapError(null);
+            void loadAppData();
+          }}
+        />
+      </div>
+    );
+  }
 
   if (!ready) {
     return (
@@ -113,9 +201,14 @@ export function App() {
   }
 
   return (
-    <div className="app" data-animations={settings.animations.enabled ? "on" : "off"}>
+    <div
+      className="app"
+      data-animations={settings.global.animations.enabled ? "on" : "off"}
+    >
       {screen === "title" && (
         <TitleScreen
+          selectedMode={settings.selectedMode}
+          onModeChange={handleModeChange}
           onStart={handleStart}
           onSettings={() => setScreen("settings")}
           onHighScores={() => setScreen("highscores")}
@@ -155,9 +248,20 @@ export function App() {
       {screen === "gameover" && (
         <GameOverScreen
           score={finalScore}
-          highScore={Math.max(currentHighScore, finalScore)}
+          highScore={finalHighScore}
           isHighScore={isHighScore}
           onNice={() => setScreen("title")}
+        />
+      )}
+      {screen === "gameerror" && gameError && (
+        <GameErrorScreen
+          message={gameError.message}
+          score={gameError.score}
+          onRetry={handleGameErrorRetry}
+          onBack={() => {
+            setGameError(null);
+            setScreen("title");
+          }}
         />
       )}
     </div>

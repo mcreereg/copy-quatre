@@ -1,7 +1,11 @@
 import heroImage from "@graphics/four-cats-4x4-grid-v4.png";
+import type { GameModeId } from "@copy-quatre/core";
 import { Button } from "../components/Button";
+import { ModeSelector } from "../components/ModeSelector";
 
 type TitleScreenProps = {
+  selectedMode: GameModeId;
+  onModeChange: (mode: GameModeId) => void;
   onStart: () => void;
   onSettings: () => void;
   onHighScores: () => void;
@@ -9,6 +13,8 @@ type TitleScreenProps = {
 };
 
 export function TitleScreen({
+  selectedMode,
+  onModeChange,
   onStart,
   onSettings,
   onHighScores,
@@ -22,6 +28,7 @@ export function TitleScreen({
         className="title-hero"
       />
       <h1 className="title">Copy Quatre</h1>
+      <ModeSelector selectedMode={selectedMode} onChange={onModeChange} />
       <div className="button-stack">
         <Button onClick={onStart}>Start</Button>
         <Button variant="secondary" onClick={onSettings}>Settings</Button>

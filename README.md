@@ -110,6 +110,14 @@ APK: `packages/web/android/app/build/outputs/apk/release/`. No signing config in
 - `packages/web` — React + Vite browser client + Capacitor shell
 - `packages/patgen` — local-dev pattern generator tool (CLI + GUI, not shipped)
 
+## Game modes
+
+**Copy** — Recreate each target pattern from an empty grid.
+
+**Imposter** — Find every changed cell and restore the target. The interactive grid starts as a mutated copy of the target (chunk shifts and cell toggles applied at generation time).
+
+Select the mode on the title screen before starting. Each mode keeps its own time limit, grid size, and pattern style. Theme, color mode, vibration, and animations are shared globally.
+
 ## Game controls
 
 - Click/tap to toggle a cell on/off

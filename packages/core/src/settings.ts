@@ -1,8 +1,13 @@
+import { GAME_MODE_IDS, isGameModeId } from "./modes/registry.js";
 import type {
   AnimationId,
   AnimationSettings,
   ColorMode,
+  GameModeId,
+  GameplaySettings,
+  GlobalSettings,
   PatternStyle,
+  SessionSettings,
   Settings,
   ThemeId,
 } from "./types.js";
@@ -16,14 +21,28 @@ export const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {
   cellOffBlink: true,
 };
 
-export const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_GAMEPLAY_SETTINGS: GameplaySettings = {
   timeLimitSec: 90,
   gridSize: 4,
   patternStyle: "cohesive",
-  theme: "yellow",
-  colorMode: "dark",
-  vibration: true,
-  animations: DEFAULT_ANIMATION_SETTINGS,
+};
+
+function createDefaultModeProfiles(): Record<GameModeId, GameplaySettings> {
+  return {
+    copy: { ...DEFAULT_GAMEPLAY_SETTINGS },
+    imposter: { ...DEFAULT_GAMEPLAY_SETTINGS },
+  };
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  selectedMode: "copy",
+  global: {
+    theme: "yellow",
+    colorMode: "dark",
+    vibration: true,
+    animations: { ...DEFAULT_ANIMATION_SETTINGS },
+  },
+  modes: createDefaultModeProfiles(),
 };
 
 export const TIME_LIMIT_MIN = 30;
@@ -89,8 +108,8 @@ export function validateAnimationSettings(raw: unknown): AnimationSettings {
   };
 }
 
-export function isAnimationActive(settings: Settings, id: AnimationId): boolean {
-  return settings.animations.enabled && settings.animations[id];
+export function isAnimationActive(animations: AnimationSettings, id: AnimationId): boolean {
+  return animations.enabled && animations[id];
 }
 
 function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -99,15 +118,71 @@ function pickEnum<T extends string>(value: unknown, allowed: readonly T[], fallb
     : fallback;
 }
 
-export function validateSettings(settings: Settings): Settings {
+function validateGameplaySettings(raw: unknown, fallback: GameplaySettings): GameplaySettings {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ...fallback };
+  }
+  const o = raw as Record<string, unknown>;
   return {
-    timeLimitSec: clampTimeLimitSec(settings.timeLimitSec),
-    gridSize: clampGridSize(settings.gridSize),
-    patternStyle: pickEnum(settings.patternStyle, PATTERN_STYLES, DEFAULT_SETTINGS.patternStyle),
-    theme: pickEnum(settings.theme, THEME_IDS, DEFAULT_SETTINGS.theme),
-    colorMode: pickEnum(settings.colorMode, COLOR_MODES, DEFAULT_SETTINGS.colorMode),
-    vibration: pickBool(settings.vibration, DEFAULT_SETTINGS.vibration),
-    animations: validateAnimationSettings(settings.animations),
+    timeLimitSec: clampTimeLimitSec(
+      typeof o.timeLimitSec === "number" ? o.timeLimitSec : fallback.timeLimitSec,
+    ),
+    gridSize: clampGridSize(typeof o.gridSize === "number" ? o.gridSize : fallback.gridSize),
+    patternStyle: pickEnum(o.patternStyle, PATTERN_STYLES, fallback.patternStyle),
+  };
+}
+
+function validateGlobalSettings(raw: unknown): GlobalSettings {
+  const defaults = DEFAULT_SETTINGS.global;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return {
+      theme: defaults.theme,
+      colorMode: defaults.colorMode,
+      vibration: defaults.vibration,
+      animations: { ...defaults.animations },
+    };
+  }
+  const o = raw as Record<string, unknown>;
+  return {
+    theme: pickEnum(o.theme, THEME_IDS, defaults.theme),
+    colorMode: pickEnum(o.colorMode, COLOR_MODES, defaults.colorMode),
+    vibration: pickBool(o.vibration, defaults.vibration),
+    animations: validateAnimationSettings(o.animations),
+  };
+}
+
+export function validateSettings(raw: unknown): Settings {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return {
+      selectedMode: DEFAULT_SETTINGS.selectedMode,
+      global: { ...DEFAULT_SETTINGS.global, animations: { ...DEFAULT_ANIMATION_SETTINGS } },
+      modes: createDefaultModeProfiles(),
+    };
+  }
+
+  const o = raw as Record<string, unknown>;
+  const selectedMode = isGameModeId(o.selectedMode) ? o.selectedMode : DEFAULT_SETTINGS.selectedMode;
+  const global = validateGlobalSettings(o.global);
+  const modesRaw = o.modes;
+  const modes = createDefaultModeProfiles();
+
+  if (modesRaw && typeof modesRaw === "object" && !Array.isArray(modesRaw)) {
+    const modeObj = modesRaw as Record<string, unknown>;
+    for (const modeId of GAME_MODE_IDS) {
+      modes[modeId] = validateGameplaySettings(modeObj[modeId], modes[modeId]);
+    }
+  }
+
+  return { selectedMode, global, modes };
+}
+
+export function resolveSessionSettings(settings: Settings, mode?: GameModeId): SessionSettings {
+  const activeMode = mode ?? settings.selectedMode;
+  const profile = settings.modes[activeMode];
+  return {
+    mode: activeMode,
+    ...profile,
+    ...settings.global,
   };
 }
 

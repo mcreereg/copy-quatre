@@ -1,4 +1,4 @@
-import { allOff, DEFAULT_SETTINGS, isAnimationActive } from "@copy-quatre/core";
+import { allOff, isAnimationActive, resolveSessionSettings } from "@copy-quatre/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -7,10 +7,34 @@ import {
 } from "../test/animationMatrix.js";
 import { PlayScreen } from "./PlayScreen";
 
-function makeState(animations: (typeof DEFAULT_SETTINGS)["animations"], interactive = allOff(2)) {
+const baseSession = resolveSessionSettings({
+  selectedMode: "copy",
+  global: {
+    theme: "yellow",
+    colorMode: "dark",
+    vibration: true,
+    animations: {
+      enabled: true,
+      lineFlash: true,
+      flyingTiles: true,
+      rattlingTiles: true,
+      cellOnBlink: true,
+      cellOffBlink: true,
+    },
+  },
+  modes: {
+    copy: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
+    imposter: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
+  },
+});
+
+function makeState(
+  animations: (typeof baseSession)["animations"],
+  interactive = allOff(2),
+) {
   return {
     phase: "playing" as const,
-    settings: { ...DEFAULT_SETTINGS, animations },
+    settings: { ...baseSession, animations },
     reference: allOff(2),
     interactive,
     score: 0,
@@ -27,9 +51,8 @@ describe("PlayScreen animation settings", () => {
       label: formatAnimationSettingsLabel(animations),
     })),
   )("wires cell blink flags ($label)", ({ animations }) => {
-    const settings = { ...DEFAULT_SETTINGS, animations };
-    const cellOnBlink = isAnimationActive(settings, "cellOnBlink");
-    const cellOffBlink = isAnimationActive(settings, "cellOffBlink");
+    const cellOnBlink = isAnimationActive(animations, "cellOnBlink");
+    const cellOffBlink = isAnimationActive(animations, "cellOffBlink");
 
     const { container, rerender } = render(
       <PlayScreen

@@ -21,10 +21,16 @@ export function AnimationSettingsScreen({
   onChange,
   onBack,
 }: AnimationSettingsScreenProps) {
-  const { animations } = settings;
+  const { animations } = settings.global;
 
   const setAnimation = (id: AnimationId, value: boolean) => {
-    onChange({ ...settings, animations: { ...animations, [id]: value } });
+    onChange({
+      ...settings,
+      global: {
+        ...settings.global,
+        animations: { ...animations, [id]: value },
+      },
+    });
   };
 
   return (
