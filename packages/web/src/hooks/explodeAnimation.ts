@@ -1,7 +1,7 @@
 import type { Grid } from "@copy-quatre/core";
 
 export const EXPLODE_DURATION_MS = 150;
-export const GRIDS_SIDE_BY_SIDE_QUERY = "(min-width: 640px)";
+export const GRIDS_SIDE_BY_SIDE_QUERY = "(min-width: 640px) and (min-aspect-ratio: 1/1)";
 export const WAVE_MAX_DELAY_MS = 45;
 export const ANGLE_NEAR_DEG = 42;
 export const ANGLE_FAR_DEG = 8;
