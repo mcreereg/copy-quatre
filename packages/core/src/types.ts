@@ -36,8 +36,10 @@ export type GameState = {
   timeRemainingMs: number;
 };
 
+export type GameOverReason = "timeout" | "quit";
+
 export type GameEvent =
   | { type: "SCORED"; score: number; matchedReference: Grid; matchedInteractive: Grid }
-  | { type: "GAME_OVER"; score: number; isHighScore: boolean };
+  | { type: "GAME_OVER"; score: number; isHighScore: boolean; reason: GameOverReason };
 
 export type HighScoreStore = Record<string, number>;

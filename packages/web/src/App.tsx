@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGameEngine } from "./hooks/useGameEngine";
 import { loadHighScores, loadSettings, saveHighScores, saveSettings } from "./platform/storage";
+import { vibrateTimeExpired } from "./platform/vibration";
 import { GameOverScreen } from "./screens/GameOverScreen";
 import { HighScoresScreen } from "./screens/HighScoresScreen";
 import { PlayScreen } from "./screens/PlayScreen";
@@ -55,6 +56,9 @@ export function App() {
   const handleEvent = useCallback(
     (event: GameEvent) => {
       if (event.type === "GAME_OVER") {
+        if (event.reason === "timeout" && settings.vibration) {
+          vibrateTimeExpired();
+        }
         const { store, isHighScore: newRecord } = updateHighScore(
           highScores,
           settings,

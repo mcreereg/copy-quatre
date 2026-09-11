@@ -108,7 +108,12 @@ export function createGameEngine(rng: Rng): GameEngine {
       case "QUIT":
         if (state.phase === "playing" || state.phase === "paused") {
           state = { ...state, phase: "gameover" };
-          events.push({ type: "GAME_OVER", score: state.score, isHighScore: false });
+          events.push({
+            type: "GAME_OVER",
+            score: state.score,
+            isHighScore: false,
+            reason: "quit",
+          });
         }
         break;
 
@@ -139,7 +144,12 @@ export function createGameEngine(rng: Rng): GameEngine {
       const remaining = state.timeRemainingMs - dtMs;
       if (remaining <= 0) {
         state = { ...state, phase: "gameover", timeRemainingMs: 0 };
-        events.push({ type: "GAME_OVER", score: state.score, isHighScore: false });
+        events.push({
+          type: "GAME_OVER",
+          score: state.score,
+          isHighScore: false,
+          reason: "timeout",
+        });
       } else {
         state = { ...state, timeRemainingMs: remaining };
       }
