@@ -410,7 +410,7 @@ Let:
 cells = gridSize * gridSize;
 x = Math.log(cells) - 1;
 min = Math.max(1, Math.floor(x));
-max = Math.ceil(x * x);
+max = Math.floor(x ** 1.2);
 ```
 
 Select:
@@ -426,14 +426,14 @@ Expected bounds for supported sizes:
 | Grid | Cells | Min | Max |
 | --- | ---: | ---: | ---: |
 | 2×2 | 4 | 1 | 1 |
-| 3×3 | 9 | 1 | 2 |
-| 4×4 | 16 | 1 | 4 |
-| 5×5 | 25 | 2 | 5 |
-| 6×6 | 36 | 2 | 7 |
-| 7×7 | 49 | 2 | 9 |
-| 8×8 | 64 | 3 | 10 |
-| 9×9 | 81 | 3 | 12 |
-| 10×10 | 100 | 3 | 13 |
+| 3×3 | 9 | 1 | 1 |
+| 4×4 | 16 | 1 | 1 |
+| 5×5 | 25 | 2 | 2 |
+| 6×6 | 36 | 2 | 3 |
+| 7×7 | 49 | 2 | 3 |
+| 8×8 | 64 | 3 | 3 |
+| 9×9 | 81 | 3 | 4 |
+| 10×10 | 100 | 3 | 4 |
 
 APIs:
 
@@ -442,7 +442,7 @@ getImposterToggleBounds(gridSize: number): { min: number; max: number }
 sampleImposterToggleCount(gridSize: number, rng: Rng): number
 ```
 
-Validate positive integer size. Tests should use exact JavaScript `Math.log`, `Math.floor`, and `Math.ceil` behavior.
+Validate positive integer size. Tests should use exact JavaScript `Math.log` and `Math.floor` behavior.
 
 ## 11. Shift-count odds
 

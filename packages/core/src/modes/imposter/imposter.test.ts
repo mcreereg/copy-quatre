@@ -25,14 +25,14 @@ import {
 
 const TOGGLE_BOUNDS: Record<number, { min: number; max: number }> = {
   2: { min: 1, max: 1 },
-  3: { min: 1, max: 2 },
-  4: { min: 1, max: 4 },
-  5: { min: 2, max: 5 },
-  6: { min: 2, max: 7 },
-  7: { min: 2, max: 9 },
-  8: { min: 3, max: 10 },
-  9: { min: 3, max: 12 },
-  10: { min: 3, max: 13 },
+  3: { min: 1, max: 1 },
+  4: { min: 1, max: 1 },
+  5: { min: 2, max: 2 },
+  6: { min: 2, max: 3 },
+  7: { min: 2, max: 3 },
+  8: { min: 3, max: 3 },
+  9: { min: 3, max: 4 },
+  10: { min: 3, max: 4 },
 };
 
 function asciiToGrid(rows: string[]): boolean[][] {
@@ -57,8 +57,8 @@ describe("imposter toggle bounds", () => {
     expect(sampleImposterToggleCount(4, rngMin)).toBe(1);
 
     const rngMax = createRng(1);
-    rngMax.nextInt = () => 4;
-    expect(sampleImposterToggleCount(4, rngMax)).toBe(4);
+    rngMax.nextInt = () => 1;
+    expect(sampleImposterToggleCount(4, rngMax)).toBe(1);
   });
 });
 

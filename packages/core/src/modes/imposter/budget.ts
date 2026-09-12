@@ -8,8 +8,8 @@ export function getImposterToggleBounds(gridSize: number): { min: number; max: n
   const cells = gridSize * gridSize;
   const x = Math.log(cells) - 1;
   const min = Math.max(1, Math.floor(x));
-  const max = Math.ceil(x * x);
-  return { min, max };
+  const max = Math.floor(x ** 1.2);
+  return { min, max: Math.max(min, max) };
 }
 
 export function sampleImposterToggleCount(gridSize: number, rng: Rng): number {
