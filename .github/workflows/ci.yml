@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, beta]
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev, beta]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -50,7 +50,7 @@ jobs:
 
   release:
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,12 +99,27 @@ jobs:
 
       - name: Resolve release version
         id: version
+        env:
+          IS_BETA: ${{ github.ref == 'refs/heads/beta' }}
         run: |
           VERSION=$(node -p "require('./packages/web/package.json').version")
           SHORT_SHA="${GITHUB_SHA::7}"
-          echo "tag=v${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "name=Copy Quatre v${VERSION} (${SHORT_SHA})" >> "$GITHUB_OUTPUT"
-          echo "apk=packages/web/android/app/build/outputs/apk/release/copy-quatre-v${VERSION}.apk" >> "$GITHUB_OUTPUT"
+          BUILT_APK="packages/web/android/app/build/outputs/apk/release/copy-quatre-v${VERSION}.apk"
+
+          if [ "$IS_BETA" = "true" ]; then
+            RELEASE_SUFFIX="${VERSION}-beta-${SHORT_SHA}"
+            RELEASE_APK="packages/web/android/app/build/outputs/apk/release/copy-quatre-v${RELEASE_SUFFIX}.apk"
+            mv "$BUILT_APK" "$RELEASE_APK"
+            echo "tag=v${RELEASE_SUFFIX}" >> "$GITHUB_OUTPUT"
+            echo "name=Copy Quatre v${RELEASE_SUFFIX}" >> "$GITHUB_OUTPUT"
+            echo "apk=${RELEASE_APK}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "name=Copy Quatre v${VERSION} (${SHORT_SHA})" >> "$GITHUB_OUTPUT"
+            echo "apk=${BUILT_APK}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Verify APK signature
         run: |
@@ -119,3 +134,4 @@ jobs:
           name: ${{ steps.version.outputs.name }}
           files: ${{ steps.version.outputs.apk }}
           generate_release_notes: true
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
