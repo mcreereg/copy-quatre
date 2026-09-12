@@ -63,38 +63,42 @@ describe("imposter toggle bounds", () => {
 });
 
 describe("imposter shift count sampling", () => {
-  it("size 2 always zero", () => {
-    for (let seed = 0; seed < 20; seed++) {
-      expect(sampleImposterShiftCount(2, createRng(seed))).toBe(0);
+  it("sizes 2-4 always zero", () => {
+    for (const size of [2, 3, 4]) {
+      for (let seed = 0; seed < 20; seed++) {
+        expect(sampleImposterShiftCount(size, createRng(seed))).toBe(0);
+      }
     }
   });
 
-  it("size 3 maps 1-75 to zero and 76-100 to one", () => {
+  it("size 5 maps 1-90 to zero and 91-100 to one", () => {
     const rng0 = createRng(1);
-    rng0.nextInt = () => 75;
-    expect(sampleImposterShiftCount(3, rng0)).toBe(0);
+    rng0.nextInt = () => 90;
+    expect(sampleImposterShiftCount(5, rng0)).toBe(0);
     const rng1 = createRng(1);
-    rng1.nextInt = () => 76;
-    expect(sampleImposterShiftCount(3, rng1)).toBe(1);
+    rng1.nextInt = () => 91;
+    expect(sampleImposterShiftCount(5, rng1)).toBe(1);
   });
 
-  it("size 4 maps 1-50 to zero and 51-100 to one", () => {
+  it("size 7 maps 1-55 to zero, 56-85 to one, and 86-100 to two", () => {
     const rng0 = createRng(1);
-    rng0.nextInt = () => 50;
-    expect(sampleImposterShiftCount(4, rng0)).toBe(0);
+    rng0.nextInt = () => 55;
+    expect(sampleImposterShiftCount(7, rng0)).toBe(0);
     const rng1 = createRng(1);
-    rng1.nextInt = () => 51;
-    expect(sampleImposterShiftCount(4, rng1)).toBe(1);
+    rng1.nextInt = () => 56;
+    expect(sampleImposterShiftCount(7, rng1)).toBe(1);
+    const rng2 = createRng(1);
+    rng2.nextInt = () => 86;
+    expect(sampleImposterShiftCount(7, rng2)).toBe(2);
   });
 
-  it("size 8+ uses equal 25% buckets", () => {
+  it("size 8+ uses 50/25/25 buckets for zero, one, and two shifts", () => {
     const cases: [number, 0 | 1 | 2 | 3][] = [
-      [25, 0],
-      [26, 1],
-      [50, 1],
-      [51, 2],
-      [75, 2],
-      [76, 3],
+      [50, 0],
+      [51, 1],
+      [75, 1],
+      [76, 2],
+      [100, 2],
     ];
     for (const [roll, expected] of cases) {
       const rng = createRng(1);

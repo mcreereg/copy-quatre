@@ -451,12 +451,12 @@ Sample one shift count per requested round. Preserve it across every generation 
 | Grid size | P(0) | P(1) | P(2) | P(3) |
 | --- | ---: | ---: | ---: | ---: |
 | 2 | 100% | 0% | 0% | 0% |
-| 3 | 75% | 25% | 0% | 0% |
-| 4 | 50% | 50% | 0% | 0% |
-| 5 | 50% | 40% | 10% | 0% |
-| 6 | 50% | 30% | 20% | 0% |
-| 7 | 25% | 30% | 30% | 15% |
-| 8–10 and any larger supported later | 25% | 25% | 25% | 25% |
+| 3 | 100% | 0% | 0% | 0% |
+| 4 | 100% | 0% | 0% | 0% |
+| 5 | 90% | 10% | 0% | 0% |
+| 6 | 80% | 20% | 0% | 0% |
+| 7 | 55% | 30% | 15% | 0% |
+| 8–10 and any larger supported later | 50% | 25% | 25% | 0% |
 
 Use integer cumulative weights totaling 100 and one `rng.nextInt(1, 100)` draw. Do not use floating thresholds.
 
@@ -1010,9 +1010,9 @@ Toggle bounds:
 Shift-count sampling:
 
 - every cumulative threshold edge for each size class
-- size 2 always zero
-- size 3 maps 1–75 to zero and 76–100 to one
-- exact tables for sizes 4, 5, 6, 7, and 8+
+- sizes 2–4 always zero
+- size 5 maps 1–90 to zero and 91–100 to one
+- exact tables for sizes 6, 7, and 8+
 
 Boundary eligibility:
 
