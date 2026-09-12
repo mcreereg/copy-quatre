@@ -55,15 +55,13 @@ export function PathOverlay({ path, gridRef, fading = false }: PathOverlayProps)
     }
 
     const update = () => {
-      const grid = gridEl.querySelector(".grid") as HTMLElement | null;
-      const target = grid ?? gridEl;
-      const rect = target.getBoundingClientRect();
-      const size = Math.round(Math.sqrt(target.querySelectorAll("[data-cell]").length));
+      const rect = gridEl.getBoundingClientRect();
+      const size = Math.round(Math.sqrt(gridEl.querySelectorAll("[data-cell]").length));
       if (!size) {
         setLayout(null);
         return;
       }
-      const centers = cellCentersFromGrid(target, size);
+      const centers = cellCentersFromGrid(gridEl, size);
       setLayout({
         width: rect.width,
         height: rect.height,

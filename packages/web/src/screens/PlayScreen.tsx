@@ -173,30 +173,30 @@ export function PlayScreen({
             gridRef={referenceGridRef}
             shakeSpecs={shakes?.ref}
           />
-          <div className="interactive-grid-stack">
-            <Grid
-              grid={state.interactive}
-              interactive
-              label={mode.interactiveLabel}
-              gridRef={interactiveGridRef}
-              shakeSpecs={shakes?.int}
-              cellOnBlink={cellOnBlink}
-              cellOffBlink={cellOffBlink}
-              longExtinguishKeys={failExtinguishKeys}
-              onCancelExtinguishRef={cancelExtinguishRef}
-              onCellInteract={handleCellInteract}
-              onPointerDown={handlePointerDown}
-              onPointerEnter={handlePointerEnter}
-              onPointerUp={handlePointerUp}
-            />
-            {isSerpentine && (
-              <PathOverlay
-                path={overlayPath}
-                gridRef={interactiveGridRef}
-                fading={overlayFading}
-              />
-            )}
-          </div>
+          <Grid
+            grid={state.interactive}
+            interactive
+            label={mode.interactiveLabel}
+            gridRef={interactiveGridRef}
+            shakeSpecs={shakes?.int}
+            cellOnBlink={cellOnBlink}
+            cellOffBlink={cellOffBlink}
+            longExtinguishKeys={failExtinguishKeys}
+            onCancelExtinguishRef={cancelExtinguishRef}
+            onCellInteract={handleCellInteract}
+            onPointerDown={handlePointerDown}
+            onPointerEnter={handlePointerEnter}
+            onPointerUp={handlePointerUp}
+            overlay={
+              isSerpentine ? (
+                <PathOverlay
+                  path={overlayPath}
+                  gridRef={interactiveGridRef}
+                  fading={overlayFading}
+                />
+              ) : undefined
+            }
+          />
         </div>
       )}
     </div>

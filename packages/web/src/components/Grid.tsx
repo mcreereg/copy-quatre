@@ -5,6 +5,7 @@ import {
   useRef,
   type CSSProperties,
   type MutableRefObject,
+  type ReactNode,
   type Ref,
 } from "react";
 import { cellIgniteKey, useCellToggleAnims } from "./cellIgnite.js";
@@ -24,6 +25,7 @@ type GridProps = {
   onPointerDown?: (row: number, col: number) => void;
   onPointerEnter?: (row: number, col: number) => void;
   onPointerUp?: () => void;
+  overlay?: ReactNode;
 };
 
 function cellFromCoordinates(
@@ -100,6 +102,7 @@ export function Grid({
   onPointerDown,
   onPointerEnter,
   onPointerUp,
+  overlay,
 }: GridProps) {
   const size = grid.length;
   const gridRef = useRef<HTMLDivElement>(null);
@@ -233,6 +236,7 @@ export function Grid({
             );
           }),
         )}
+        {overlay}
       </div>
     </div>
   );
