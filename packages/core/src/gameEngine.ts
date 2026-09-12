@@ -3,7 +3,7 @@ import { getGameMode } from "./modes/registry.js";
 import type { GameRound } from "./types.js";
 import type { Rng } from "./rng.js";
 import { DEFAULT_SETTINGS, resolveSessionSettings } from "./settings.js";
-import type { GameEvent, GameState, SessionSettings } from "./types.js";
+import type { CellCoordinate, GameEvent, GameState, SessionSettings } from "./types.js";
 
 export type GameAction =
   | { type: "START"; settings: SessionSettings }
@@ -15,10 +15,15 @@ export type GameAction =
   | { type: "POINTER_ENTER"; row: number; col: number }
   | { type: "POINTER_UP" };
 
-type StrokeState = {
+type CopyStrokeState = {
   active: boolean;
   paintMode: boolean;
   visited: Set<string>;
+};
+
+type SerpentineStrokeState = {
+  active: boolean;
+  path: CellCoordinate[];
 };
 
 export type GameEngine = {
@@ -35,15 +40,40 @@ function createInitialState(): GameState {
     interactive: allOff(4),
     score: 0,
     timeRemainingMs: 0,
+    strokePath: [],
   };
 }
 
-function createStroke(): StrokeState {
+function createCopyStroke(): CopyStrokeState {
   return { active: false, paintMode: false, visited: new Set() };
+}
+
+function createSerpentineStroke(): SerpentineStrokeState {
+  return { active: false, path: [] };
 }
 
 function cellKey(row: number, col: number): string {
   return `${row},${col}`;
+}
+
+function isAdjacent(a: CellCoordinate, b: CellCoordinate): boolean {
+  const dr = Math.abs(a.row - b.row);
+  const dc = Math.abs(a.col - b.col);
+  return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+}
+
+function coordsEqual(a: CellCoordinate, b: CellCoordinate): boolean {
+  return a.row === b.row && a.col === b.col;
+}
+
+function listOnCells(grid: GameState["interactive"]): CellCoordinate[] {
+  const cells: CellCoordinate[] = [];
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
+      if (grid[row][col]) cells.push({ row, col });
+    }
+  }
+  return cells;
 }
 
 function createRound(
@@ -100,6 +130,7 @@ function startGame(
       interactive: round.interactive,
       score: 0,
       timeRemainingMs: settings.timeLimitSec * 1000,
+      strokePath: [],
     },
     events: [],
     nextRound,
@@ -108,11 +139,23 @@ function startGame(
 
 export function createGameEngine(rng: Rng): GameEngine {
   let state: GameState = createInitialState();
-  let stroke: StrokeState = createStroke();
+  let copyStroke: CopyStrokeState = createCopyStroke();
+  let serpentineStroke: SerpentineStrokeState = createSerpentineStroke();
   let nextRound: GameRound | null = null;
 
   function getState(): GameState {
     return state;
+  }
+
+  function isSerpentineMode(): boolean {
+    return state.settings.mode === "serpentine";
+  }
+
+  function syncSerpentinePath(): void {
+    state = {
+      ...state,
+      strokePath: serpentineStroke.active ? [...serpentineStroke.path] : [],
+    };
   }
 
   function dispatch(action: GameAction): GameEvent[] {
@@ -123,7 +166,8 @@ export function createGameEngine(rng: Rng): GameEngine {
         const started = startGame(action.settings, rng);
         state = started.state;
         nextRound = started.nextRound;
-        stroke = createStroke();
+        copyStroke = createCopyStroke();
+        serpentineStroke = createSerpentineStroke();
         events.push(...started.events);
         break;
       }
@@ -158,18 +202,32 @@ export function createGameEngine(rng: Rng): GameEngine {
 
       case "POINTER_DOWN":
         if (state.phase === "playing") {
-          stroke = handlePointerDown(action.row, action.col, events);
+          if (isSerpentineMode()) {
+            handleSerpentinePointerDown(action.row, action.col, events);
+          } else {
+            copyStroke = handleCopyPointerDown(action.row, action.col, events);
+          }
         }
         break;
 
       case "POINTER_ENTER":
-        if (state.phase === "playing" && stroke.active) {
-          handlePointerEnter(action.row, action.col, events);
+        if (state.phase === "playing") {
+          if (isSerpentineMode()) {
+            if (serpentineStroke.active) {
+              handleSerpentinePointerEnter(action.row, action.col, events);
+            }
+          } else if (copyStroke.active) {
+            handleCopyPointerEnter(action.row, action.col, events);
+          }
         }
         break;
 
       case "POINTER_UP":
-        stroke = createStroke();
+        if (state.phase === "playing" && isSerpentineMode()) {
+          handleSerpentinePointerUp(events);
+        } else {
+          copyStroke = createCopyStroke();
+        }
         break;
     }
 
@@ -197,7 +255,7 @@ export function createGameEngine(rng: Rng): GameEngine {
     return events;
   }
 
-  function handlePointerDown(row: number, col: number, events: GameEvent[]): StrokeState {
+  function handleCopyPointerDown(row: number, col: number, events: GameEvent[]): CopyStrokeState {
     const key = cellKey(row, col);
     const scoreBefore = state.score;
     const toggled = toggleCell(state.interactive, row, col);
@@ -205,20 +263,113 @@ export function createGameEngine(rng: Rng): GameEngine {
     state = { ...state, interactive: toggled };
     checkMatch(events);
     if (state.score > scoreBefore) {
-      return createStroke();
+      return createCopyStroke();
     }
     return { active: true, paintMode, visited: new Set([key]) };
   }
 
-  function handlePointerEnter(row: number, col: number, events: GameEvent[]): void {
+  function handleCopyPointerEnter(row: number, col: number, events: GameEvent[]): void {
     const key = cellKey(row, col);
-    if (stroke.visited.has(key)) return;
-    stroke.visited.add(key);
+    if (copyStroke.visited.has(key)) return;
+    copyStroke.visited.add(key);
     state = {
       ...state,
-      interactive: setCell(state.interactive, row, col, stroke.paintMode),
+      interactive: setCell(state.interactive, row, col, copyStroke.paintMode),
     };
     checkMatch(events);
+  }
+
+  function handleSerpentinePointerDown(row: number, col: number, events: GameEvent[]): void {
+    if (serpentineStroke.active) return;
+
+    const scoreBefore = state.score;
+    serpentineStroke = {
+      active: true,
+      path: [{ row, col }],
+    };
+    state = {
+      ...state,
+      interactive: setCell(state.interactive, row, col, true),
+    };
+    syncSerpentinePath();
+    checkMatch(events);
+    if (state.score > scoreBefore) {
+      serpentineStroke = createSerpentineStroke();
+      syncSerpentinePath();
+    }
+  }
+
+  function handleSerpentinePointerEnter(row: number, col: number, events: GameEvent[]): void {
+    const path = serpentineStroke.path;
+    const len = path.length;
+    if (len === 0) return;
+
+    const current = { row, col };
+
+    if (len >= 2 && coordsEqual(current, path[len - 2])) {
+      const removed = path[len - 1];
+      serpentineStroke = {
+        active: true,
+        path: path.slice(0, -1),
+      };
+      state = {
+        ...state,
+        interactive: setCell(state.interactive, removed.row, removed.col, false),
+      };
+      syncSerpentinePath();
+      checkMatch(events);
+      return;
+    }
+
+    if (coordsEqual(current, path[len - 1])) {
+      return;
+    }
+
+    if (path.some((cell) => coordsEqual(cell, current))) {
+      return;
+    }
+
+    const tail = path[len - 1];
+    if (!isAdjacent(tail, current)) {
+      return;
+    }
+
+    serpentineStroke = {
+      active: true,
+      path: [...path, current],
+    };
+    state = {
+      ...state,
+      interactive: setCell(state.interactive, row, col, true),
+    };
+    syncSerpentinePath();
+    checkMatch(events);
+  }
+
+  function handleSerpentinePointerUp(events: GameEvent[]): void {
+    if (!serpentineStroke.active) return;
+
+    const failedPath = [...serpentineStroke.path];
+
+    if (!gridsEqual(state.reference, state.interactive)) {
+      const turnedOffCells = listOnCells(state.interactive);
+      const size = state.interactive.length;
+      state = {
+        ...state,
+        interactive: allOff(size),
+        strokePath: [],
+      };
+      serpentineStroke = createSerpentineStroke();
+      events.push({
+        type: "STROKE_FAILED",
+        path: failedPath,
+        turnedOffCells,
+      });
+      return;
+    }
+
+    serpentineStroke = createSerpentineStroke();
+    syncSerpentinePath();
   }
 
   function checkMatch(events: GameEvent[]): void {
@@ -237,8 +388,10 @@ export function createGameEngine(rng: Rng): GameEngine {
           ...state,
           score: newScore,
           phase: "gameover",
+          strokePath: [],
         };
-        stroke = createStroke();
+        copyStroke = createCopyStroke();
+        serpentineStroke = createSerpentineStroke();
         events.push({
           type: "SCORED",
           score: newScore,
@@ -262,8 +415,10 @@ export function createGameEngine(rng: Rng): GameEngine {
       score: newScore,
       reference: round.reference,
       interactive: round.interactive,
+      strokePath: [],
     };
-    stroke = createStroke();
+    copyStroke = createCopyStroke();
+    serpentineStroke = createSerpentineStroke();
     nextRound = tryPregenerateNextRound(state.settings, round.reference, rng);
 
     events.push({

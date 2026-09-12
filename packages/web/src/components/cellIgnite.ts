@@ -1,10 +1,11 @@
 import type { Grid } from "@copy-quatre/core";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export const CELL_IGNITE_BRIGHT_MS = 100;
 export const CELL_IGNITE_FADE_MS = 100;
 export const CELL_IGNITE_FADE_DELAY_MS = CELL_IGNITE_BRIGHT_MS / 2;
 export const CELL_EXTINGUISH_MS = 100;
+export const CELL_SERPENTINE_FAIL_EXTINGUISH_MS = 1000;
 
 const EMPTY_KEYS: ReadonlySet<string> = new Set();
 
@@ -60,13 +61,25 @@ export function nextExtinguishKeys(
 export type CellToggleAnimFlags = {
   ignite: boolean;
   extinguish: boolean;
+  longExtinguishKeys?: ReadonlySet<string>;
 };
+
+function extinguishDurationMs(key: string, longExtinguishKeys?: ReadonlySet<string>): number {
+  return longExtinguishKeys?.has(key)
+    ? CELL_SERPENTINE_FAIL_EXTINGUISH_MS
+    : CELL_EXTINGUISH_MS;
+}
 
 export function useCellToggleAnims(
   grid: Grid,
   flags: CellToggleAnimFlags,
-): { igniteKeys: ReadonlySet<string>; extinguishKeys: ReadonlySet<string> } {
-  const { ignite: igniteEnabled, extinguish: extinguishEnabled } = flags;
+): {
+  igniteKeys: ReadonlySet<string>;
+  extinguishKeys: ReadonlySet<string>;
+  slowExtinguishKeys: ReadonlySet<string>;
+  cancelExtinguish: (key: string) => void;
+} {
+  const { ignite: igniteEnabled, extinguish: extinguishEnabled, longExtinguishKeys } = flags;
   const [anim, setAnim] = useState<{
     grid: Grid;
     ignite: Set<string>;
@@ -77,6 +90,20 @@ export function useCellToggleAnims(
     extinguish: new Set(),
   }));
   const timeoutsRef = useRef<Map<string, number>>(new Map());
+
+  const cancelExtinguish = useCallback((key: string) => {
+    const timeoutId = timeoutsRef.current.get(key);
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+      timeoutsRef.current.delete(key);
+    }
+    setAnim((current) => {
+      if (!current.extinguish.has(key)) return current;
+      const extinguish = new Set(current.extinguish);
+      extinguish.delete(key);
+      return { ...current, extinguish };
+    });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -115,6 +142,7 @@ export function useCellToggleAnims(
 
     for (const key of extinguishKeys) {
       if (timeoutsRef.current.has(key)) continue;
+      const durationMs = extinguishDurationMs(key, longExtinguishKeys);
       const id = window.setTimeout(() => {
         timeoutsRef.current.delete(key);
         setAnim((current) => {
@@ -123,7 +151,7 @@ export function useCellToggleAnims(
           extinguish.delete(key);
           return { ...current, extinguish };
         });
-      }, CELL_EXTINGUISH_MS);
+      }, durationMs);
       timeoutsRef.current.set(key, id);
     }
 
@@ -132,7 +160,11 @@ export function useCellToggleAnims(
       window.clearTimeout(id);
       timeoutsRef.current.delete(key);
     }
-  }, [extinguishEnabled, extinguishKeys]);
+  }, [extinguishEnabled, extinguishKeys, longExtinguishKeys]);
 
-  return { igniteKeys, extinguishKeys };
+  const slowExtinguishKeys = new Set(
+    [...extinguishKeys].filter((key) => longExtinguishKeys?.has(key)),
+  );
+
+  return { igniteKeys, extinguishKeys, slowExtinguishKeys, cancelExtinguish };
 }

@@ -9,8 +9,8 @@ import {
 
 describe("mode registry", () => {
   it("lists registered modes in order", () => {
-    expect(GAME_MODE_IDS).toEqual(["copy", "imposter"]);
-    expect(GAME_MODES.map((mode) => mode.id)).toEqual(["copy", "imposter"]);
+    expect(GAME_MODE_IDS).toEqual(["copy", "imposter", "serpentine"]);
+    expect(GAME_MODES.map((mode) => mode.id)).toEqual(["copy", "imposter", "serpentine"]);
   });
 
   it("gets mode by id", () => {
@@ -29,7 +29,8 @@ describe("mode registry", () => {
 
   it("cycles modes in registry order", () => {
     expect(cycleGameMode("copy", 1)).toBe("imposter");
-    expect(cycleGameMode("imposter", 1)).toBe("copy");
-    expect(cycleGameMode("copy", -1)).toBe("imposter");
+    expect(cycleGameMode("imposter", 1)).toBe("serpentine");
+    expect(cycleGameMode("serpentine", 1)).toBe("copy");
+    expect(cycleGameMode("copy", -1)).toBe("serpentine");
   });
 });

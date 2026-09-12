@@ -418,6 +418,50 @@ body {
   overflow: hidden;
 }
 
+.interactive-grid-stack {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.path-overlay {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100cqw, calc(100cqh - 1.25rem));
+  height: auto;
+  aspect-ratio: 1;
+  max-width: 100%;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 1s linear;
+}
+
+.path-overlay-fading {
+  opacity: 0;
+}
+
+.path-overlay-line {
+  stroke: var(--cellOn);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 8 6;
+  animation: path-dash-flow 0.75s linear infinite;
+}
+
+@keyframes path-dash-flow {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
 .play-screen .grid-label {
   flex-shrink: 0;
 }
@@ -600,6 +644,10 @@ body {
   background: var(--cellOn);
   transform: translate(-50%, -50%) scale(1);
   animation: cell-extinguish-shrink 100ms linear forwards;
+}
+
+.cell-extinguish-slow::before {
+  animation: cell-extinguish-shrink 1000ms linear forwards;
 }
 
 @keyframes cell-extinguish-shrink {

@@ -1,5 +1,5 @@
 import type { Rng } from "../rng.js";
-import type { GameModeId, GameRound, SessionSettings } from "../types.js";
+import type { CellCoordinate, GameModeId, GameRound, SessionSettings } from "../types.js";
 
 export type ShiftDirection = "north" | "east" | "south" | "west";
 
@@ -11,7 +11,7 @@ export type ChunkShift = {
   direction: ShiftDirection;
 };
 
-export type CellCoordinate = { row: number; col: number };
+export type { CellCoordinate };
 
 export type ImposterRoundMetadata = {
   toggleCount: number;

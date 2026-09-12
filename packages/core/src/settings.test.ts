@@ -10,6 +10,7 @@ import {
   DEFAULT_SETTINGS,
   formatTimeLimit,
   isAnimationActive,
+  modeShowsPatternStyle,
   resolveSessionSettings,
   stepGridSize,
   stepTimeLimitSec,
@@ -60,6 +61,7 @@ describe("settings", () => {
     expect(DEFAULT_SETTINGS.selectedMode).toBe("copy");
     expect(DEFAULT_SETTINGS.modes.copy).toEqual(DEFAULT_GAMEPLAY_SETTINGS);
     expect(DEFAULT_SETTINGS.modes.imposter).toEqual(DEFAULT_GAMEPLAY_SETTINGS);
+    expect(DEFAULT_SETTINGS.modes.serpentine).toEqual(DEFAULT_GAMEPLAY_SETTINGS);
     expect(DEFAULT_SETTINGS.global.colorMode).toBe("dark");
     expect(DEFAULT_SETTINGS.global.vibration).toBe(true);
     expect(DEFAULT_SETTINGS.global.animations).toEqual(DEFAULT_ANIMATION_SETTINGS);
@@ -69,6 +71,13 @@ describe("settings", () => {
     const settings = validateSettings(undefined);
     settings.modes.copy.gridSize = 99;
     expect(settings.modes.imposter.gridSize).toBe(4);
+    expect(settings.modes.serpentine.gridSize).toBe(4);
+  });
+
+  it("hides pattern style for serpentine mode", () => {
+    expect(modeShowsPatternStyle("copy")).toBe(true);
+    expect(modeShowsPatternStyle("imposter")).toBe(true);
+    expect(modeShowsPatternStyle("serpentine")).toBe(false);
   });
 
   it("clamps time limit to step", () => {

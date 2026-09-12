@@ -25,6 +25,7 @@ const baseSession = resolveSessionSettings({
   modes: {
     copy: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
     imposter: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
+    serpentine: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
   },
 });
 
@@ -39,6 +40,7 @@ function makeState(
     interactive,
     score: 0,
     timeRemainingMs: 90000,
+    strokePath: [],
   };
 }
 
