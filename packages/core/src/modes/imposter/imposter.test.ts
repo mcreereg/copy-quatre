@@ -12,7 +12,8 @@ import {
   isImposterToggleEligible,
   listImposterToggleCandidates,
 } from "./boundary.js";
-import { generateImposterRound } from "./generate.js";
+import { generateImposterRound, ImposterGenerationError } from "./generate.js";
+import * as budgetModule from "./budget.js";
 import { validateImposterGrid } from "./validation.js";
 import * as shiftModule from "./shift.js";
 import {
@@ -63,6 +64,11 @@ describe("imposter toggle bounds", () => {
 });
 
 describe("imposter shift count sampling", () => {
+  it("rejects invalid sizes", () => {
+    expect(() => sampleImposterShiftCount(1, createRng(1))).toThrow(RangeError);
+    expect(() => sampleImposterShiftCount(11, createRng(1))).toThrow(RangeError);
+  });
+
   it("sizes 2-4 always zero", () => {
     for (const size of [2, 3, 4]) {
       for (let seed = 0; seed < 20; seed++) {
@@ -78,6 +84,15 @@ describe("imposter shift count sampling", () => {
     const rng1 = createRng(1);
     rng1.nextInt = () => 91;
     expect(sampleImposterShiftCount(5, rng1)).toBe(1);
+  });
+
+  it("size 6 maps 1-80 to zero and 81-100 to one", () => {
+    const rng0 = createRng(1);
+    rng0.nextInt = () => 80;
+    expect(sampleImposterShiftCount(6, rng0)).toBe(0);
+    const rng1 = createRng(1);
+    rng1.nextInt = () => 81;
+    expect(sampleImposterShiftCount(6, rng1)).toBe(1);
   });
 
   it("size 7 maps 1-55 to zero, 56-85 to one, and 86-100 to two", () => {
@@ -283,8 +298,56 @@ describe("generateImposterRound", () => {
     vi.restoreAllMocks();
   });
 
+  it("generates rounds with forced non-zero shift counts", () => {
+    const settings = resolveSessionSettings({
+      ...DEFAULT_SETTINGS,
+      modes: {
+        copy: { timeLimitSec: 90, gridSize: 8, patternStyle: "cohesive" },
+        imposter: { timeLimitSec: 90, gridSize: 8, patternStyle: "cohesive" },
+      },
+    });
+
+    for (const shiftCount of [1, 2] as const) {
+      vi.spyOn(budgetModule, "sampleImposterShiftCount").mockReturnValue(shiftCount);
+      const round = generateImposterRound({ settings, rng: createRng(42) });
+      expect(round.metadata.shiftCount).toBe(shiftCount);
+      expect(round.metadata.shifts).toHaveLength(shiftCount);
+      expect(gridsEqual(round.reference, round.interactive)).toBe(false);
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("uses deterministic fallback for forced shift counts when random path fails", () => {
+    const settings = resolveSessionSettings({
+      ...DEFAULT_SETTINGS,
+      modes: {
+        copy: { timeLimitSec: 90, gridSize: 8, patternStyle: "cohesive" },
+        imposter: { timeLimitSec: 90, gridSize: 8, patternStyle: "cohesive" },
+      },
+    });
+
+    vi.spyOn(budgetModule, "sampleImposterShiftCount").mockReturnValue(1);
+    vi.spyOn(shiftModule, "sampleAndApplyChunkShift").mockReturnValue(null);
+    const round = generateImposterRound({ settings, rng: createRng(42) });
+    expect(round.metadata.shiftCount).toBe(1);
+    expect(round.metadata.shifts).toHaveLength(1);
+    expect(gridsEqual(round.reference, round.interactive)).toBe(false);
+    vi.restoreAllMocks();
+  });
+
+  it("throws when generation and fallback are both exhausted", () => {
+    vi.spyOn(budgetModule, "sampleImposterShiftCount").mockReturnValue(1);
+    vi.spyOn(shiftModule, "sampleAndApplyChunkShift").mockReturnValue(null);
+    vi.spyOn(shiftModule, "listValidChunkShifts").mockReturnValue([]);
+
+    expect(() => generateImposterRound({ settings: session, rng: createRng(42) })).toThrow(
+      ImposterGenerationError,
+    );
+    vi.restoreAllMocks();
+  });
+
   it("property corpus never returns identity and preserves invariants", () => {
-    for (const gridSize of [2, 3, 4, 5, 6]) {
+    for (const gridSize of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       for (const patternStyle of ["cohesive", "chaos"] as const) {
         for (let seed = 0; seed < 50; seed++) {
           const settings = resolveSessionSettings({
