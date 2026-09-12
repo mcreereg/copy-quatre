@@ -8,8 +8,8 @@ export function getImposterToggleBounds(gridSize: number): { min: number; max: n
   const cells = gridSize * gridSize;
   const x = Math.log(cells) - 1;
   const min = Math.max(1, Math.floor(x));
-  const max = Math.ceil(x * x);
-  return { min, max };
+  const max = Math.floor(x ** 1.2);
+  return { min, max: Math.max(min, max) };
 }
 
 export function sampleImposterToggleCount(gridSize: number, rng: Rng): number {
@@ -19,18 +19,17 @@ export function sampleImposterToggleCount(gridSize: number, rng: Rng): number {
 
 const SHIFT_COUNT_WEIGHTS: Record<number, readonly [0 | 1 | 2 | 3, number][]> = {
   2: [[0, 100]],
-  3: [[0, 75], [1, 25]],
-  4: [[0, 50], [1, 50]],
-  5: [[0, 50], [1, 40], [2, 10]],
-  6: [[0, 50], [1, 30], [2, 20]],
-  7: [[0, 25], [1, 30], [2, 30], [3, 15]],
+  3: [[0, 100]],
+  4: [[0, 100]],
+  5: [[0, 90], [1, 10]],
+  6: [[0, 80], [1, 20]],
+  7: [[0, 55], [1, 30], [2, 15]],
 };
 
 const DEFAULT_SHIFT_WEIGHTS: readonly [0 | 1 | 2 | 3, number][] = [
-  [0, 25],
+  [0, 50],
   [1, 25],
   [2, 25],
-  [3, 25],
 ];
 
 export function sampleImposterShiftCount(gridSize: number, rng: Rng): 0 | 1 | 2 | 3 {
