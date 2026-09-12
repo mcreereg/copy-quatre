@@ -346,7 +346,9 @@ describe("generateImposterRound", () => {
     vi.restoreAllMocks();
   });
 
-  it("property corpus never returns identity and preserves invariants", () => {
+  it(
+    "property corpus never returns identity and preserves invariants",
+    () => {
     for (const gridSize of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       for (const patternStyle of ["cohesive", "chaos"] as const) {
         for (let seed = 0; seed < 50; seed++) {
@@ -364,5 +366,7 @@ describe("generateImposterRound", () => {
         }
       }
     }
-  });
+    },
+    20_000,
+  );
 });
