@@ -2,9 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   MATCH_VIBRATION_AMPLITUDES,
   MATCH_VIBRATION_PATTERN,
+  INVALID_SOLVE_VIBRATION_AMPLITUDES,
+  INVALID_SOLVE_VIBRATION_PATTERN,
+  INVALID_SOLVE_VIBRATION_TIMINGS,
   MATCH_VIBRATION_TIMINGS,
   TIME_EXPIRED_VIBRATION_PATTERN,
   TOGGLE_ON_VIBRATION_MS,
+  vibrateInvalidSolve,
   vibrateMatch,
   vibrateTimeExpired,
   vibrateToggleOn,
@@ -100,6 +104,40 @@ describe("vibrateTimeExpired", () => {
     vi.stubGlobal("navigator", {});
 
     expect(() => vibrateTimeExpired()).not.toThrow();
+  });
+});
+
+describe("vibrateInvalidSolve", () => {
+  beforeEach(() => {
+    getPlatformMock.mockReturnValue("web");
+    vibrateWaveformMock.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("calls navigator.vibrate with double-pulse pattern on web", () => {
+    const vibrate = vi.fn();
+    vi.stubGlobal("navigator", { vibrate });
+
+    vibrateInvalidSolve();
+
+    expect(vibrate).toHaveBeenCalledOnce();
+    expect(vibrate).toHaveBeenCalledWith(INVALID_SOLVE_VIBRATION_PATTERN);
+    expect(vibrateWaveformMock).not.toHaveBeenCalled();
+  });
+
+  it("calls native waveform on android", () => {
+    getPlatformMock.mockReturnValue("android");
+
+    vibrateInvalidSolve();
+
+    expect(vibrateWaveformMock).toHaveBeenCalledOnce();
+    expect(vibrateWaveformMock).toHaveBeenCalledWith({
+      timings: INVALID_SOLVE_VIBRATION_TIMINGS,
+      amplitudes: INVALID_SOLVE_VIBRATION_AMPLITUDES,
+    });
   });
 });
 

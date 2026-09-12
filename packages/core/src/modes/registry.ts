@@ -1,6 +1,7 @@
 import type { GameModeId } from "../types.js";
 import { createCopyRound } from "./copy.js";
 import { generateImposterRound } from "./imposter/generate.js";
+import { createSerpentineRound } from "./serpentine.js";
 import type { GameModeDefinition } from "./types.js";
 
 export const GAME_MODES: readonly GameModeDefinition[] = [
@@ -19,6 +20,14 @@ export const GAME_MODES: readonly GameModeDefinition[] = [
     referenceLabel: "Target",
     interactiveLabel: "Find and fix imposters",
     createRound: generateImposterRound,
+  },
+  {
+    id: "serpentine",
+    name: "Serpentine",
+    description: "Draw one unbroken path to match the target.",
+    referenceLabel: "Trace this",
+    interactiveLabel: "Draw one path",
+    createRound: createSerpentineRound,
   },
 ];
 

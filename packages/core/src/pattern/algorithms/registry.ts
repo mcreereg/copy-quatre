@@ -3,6 +3,7 @@ import { chaosAlgorithm } from "./chaosAlgorithm.js";
 import { endpointGrowAlgorithm } from "./endpointGrow.js";
 import { legacyCohesiveAlgorithm } from "./legacyCohesiveAlgorithm.js";
 import { morphologyMixAlgorithm } from "./morphologyMix.js";
+import { serpentineAlgorithm } from "./serpentine.js";
 import { skeletonErosionAlgorithm } from "./skeletonErosion.js";
 import type { AlgorithmDefinition } from "./types.js";
 import { wormWalkAlgorithm } from "./wormWalk.js";
@@ -15,6 +16,7 @@ export const PATTERN_ALGORITHMS: AlgorithmDefinition[] = [
   morphologyMixAlgorithm,
   endpointGrowAlgorithm,
   skeletonErosionAlgorithm,
+  serpentineAlgorithm,
 ];
 
 export function getAlgorithm(id: string): AlgorithmDefinition | undefined {

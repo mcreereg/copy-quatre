@@ -1,5 +1,12 @@
 import type { Grid as GridType } from "@copy-quatre/core";
-import { useCallback, useEffect, useRef, type CSSProperties, type Ref } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type MutableRefObject,
+  type Ref,
+} from "react";
 import { cellIgniteKey, useCellToggleAnims } from "./cellIgnite.js";
 import { SHAKE_DURATION_MS, type CellShakeSpec } from "./gridShake.js";
 
@@ -11,6 +18,9 @@ type GridProps = {
   shakeSpecs?: ReadonlyMap<string, CellShakeSpec>;
   cellOnBlink?: boolean;
   cellOffBlink?: boolean;
+  longExtinguishKeys?: ReadonlySet<string>;
+  onCancelExtinguishRef?: MutableRefObject<(key: string) => void>;
+  onCellInteract?: (row: number, col: number) => void;
   onPointerDown?: (row: number, col: number) => void;
   onPointerEnter?: (row: number, col: number) => void;
   onPointerUp?: () => void;
@@ -56,11 +66,13 @@ function cellClassName(
   key: string,
   igniteKeys: ReadonlySet<string>,
   extinguishKeys: ReadonlySet<string>,
+  slowExtinguishKeys: ReadonlySet<string>,
   shaking: boolean,
 ): string {
   const ignite = on && igniteKeys.has(key);
   const extinguish = !on && extinguishKeys.has(key);
-  return `cell ${on ? "cell-on" : "cell-off"}${ignite ? " cell-ignite" : ""}${extinguish ? " cell-extinguish" : ""}${shaking ? " cell-shake" : ""}`;
+  const slowExtinguish = extinguish && slowExtinguishKeys.has(key);
+  return `cell ${on ? "cell-on" : "cell-off"}${ignite ? " cell-ignite" : ""}${extinguish ? " cell-extinguish" : ""}${slowExtinguish ? " cell-extinguish-slow" : ""}${shaking ? " cell-shake" : ""}`;
 }
 
 function cellShakeStyle(spec: CellShakeSpec | undefined): CSSProperties | undefined {
@@ -82,6 +94,9 @@ export function Grid({
   shakeSpecs,
   cellOnBlink = true,
   cellOffBlink = true,
+  longExtinguishKeys,
+  onCancelExtinguishRef,
+  onCellInteract,
   onPointerDown,
   onPointerEnter,
   onPointerUp,
@@ -89,10 +104,27 @@ export function Grid({
   const size = grid.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  const { igniteKeys, extinguishKeys } = useCellToggleAnims(grid, {
-    ignite: interactive && cellOnBlink,
-    extinguish: interactive && cellOffBlink,
-  });
+  const { igniteKeys, extinguishKeys, slowExtinguishKeys, cancelExtinguish } = useCellToggleAnims(
+    grid,
+    {
+      ignite: interactive && cellOnBlink,
+      extinguish: interactive && cellOffBlink,
+      longExtinguishKeys,
+    },
+  );
+
+  useEffect(() => {
+    if (onCancelExtinguishRef) {
+      onCancelExtinguishRef.current = cancelExtinguish;
+    }
+  }, [cancelExtinguish, onCancelExtinguishRef]);
+
+  const handleCellInteract = useCallback(
+    (row: number, col: number) => {
+      onCellInteract?.(row, col);
+    },
+    [onCellInteract],
+  );
 
   const setGridRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -124,14 +156,16 @@ export function Grid({
       if (pending) {
         if (cell.row === pending.row && cell.col === pending.col) {
           pendingOutsideCell.current = null;
+          handleCellInteract(cell.row, cell.col);
           onPointerDown?.(cell.row, cell.col);
         }
         return;
       }
 
+      handleCellInteract(cell.row, cell.col);
       onPointerEnter?.(cell.row, cell.col);
     },
-    [interactive, onPointerDown, onPointerEnter, size],
+    [handleCellInteract, interactive, onPointerDown, onPointerEnter, size],
   );
 
   useEffect(() => {
@@ -161,7 +195,10 @@ export function Grid({
           const hitCell = (e.target as HTMLElement).closest("[data-cell]") as HTMLElement | null;
           if (hitCell) {
             pendingOutsideCell.current = null;
-            onPointerDown?.(Number(hitCell.dataset.row), Number(hitCell.dataset.col));
+            const row = Number(hitCell.dataset.row);
+            const col = Number(hitCell.dataset.col);
+            handleCellInteract(row, col);
+            onPointerDown?.(row, col);
             return;
           }
 
@@ -183,7 +220,14 @@ export function Grid({
                 data-cell
                 data-row={r}
                 data-col={c}
-                className={cellClassName(on, key, igniteKeys, extinguishKeys, shake !== undefined)}
+                className={cellClassName(
+                  on,
+                  key,
+                  igniteKeys,
+                  extinguishKeys,
+                  slowExtinguishKeys,
+                  shake !== undefined,
+                )}
                 style={cellShakeStyle(shake)}
               />
             );

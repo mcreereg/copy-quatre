@@ -13,6 +13,7 @@ import { PlayScreen } from "./PlayScreen";
 
 vi.mock("../platform/vibration", () => ({
   vibrateMatch: vi.fn(),
+  vibrateInvalidSolve: vi.fn(),
 }));
 
 const baseSession = resolveSessionSettings({
@@ -33,6 +34,7 @@ const baseSession = resolveSessionSettings({
   modes: {
     copy: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
     imposter: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
+    serpentine: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
   },
 });
 
@@ -44,6 +46,7 @@ function makeState(overrides: Partial<GameState> & { settings?: SessionSettings 
     interactive: allOff(4),
     score: 0,
     timeRemainingMs: 90000,
+    strokePath: [],
     ...overrides,
   };
 }

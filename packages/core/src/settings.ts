@@ -31,7 +31,12 @@ function createDefaultModeProfiles(): Record<GameModeId, GameplaySettings> {
   return {
     copy: { ...DEFAULT_GAMEPLAY_SETTINGS },
     imposter: { ...DEFAULT_GAMEPLAY_SETTINGS },
+    serpentine: { ...DEFAULT_GAMEPLAY_SETTINGS },
   };
+}
+
+export function modeShowsPatternStyle(modeId: GameModeId): boolean {
+  return modeId !== "serpentine";
 }
 
 export const DEFAULT_SETTINGS: Settings = {

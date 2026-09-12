@@ -13,7 +13,7 @@ export type AnimationSettings = {
 
 export type AnimationId = keyof Omit<AnimationSettings, "enabled">;
 
-export type GameModeId = "copy" | "imposter";
+export type GameModeId = "copy" | "imposter" | "serpentine";
 
 export type GameplaySettings = {
   timeLimitSec: number;
@@ -48,6 +48,8 @@ export type GameRound = {
   interactive: Grid;
 };
 
+export type CellCoordinate = { row: number; col: number };
+
 export type GameState = {
   phase: GamePhase;
   settings: SessionSettings;
@@ -55,12 +57,18 @@ export type GameState = {
   interactive: Grid;
   score: number;
   timeRemainingMs: number;
+  strokePath: CellCoordinate[];
 };
 
 export type GameOverReason = "timeout" | "quit";
 
 export type GameEvent =
   | { type: "SCORED"; score: number; matchedReference: Grid; matchedInteractive: Grid }
+  | {
+      type: "STROKE_FAILED";
+      path: CellCoordinate[];
+      turnedOffCells: CellCoordinate[];
+    }
   | {
       type: "GAME_OVER";
       score: number;
