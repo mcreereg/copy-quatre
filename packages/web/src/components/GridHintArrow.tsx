@@ -16,6 +16,7 @@ type GridHintArrowProps = {
   interactiveRef: RefObject<HTMLDivElement | null>;
   gridSize: number;
   containerRef: RefObject<HTMLElement | null>;
+  animationKey: number;
 };
 
 type ArrowLayout = {
@@ -40,6 +41,7 @@ export function GridHintArrow({
   interactiveRef,
   gridSize,
   containerRef,
+  animationKey,
 }: GridHintArrowProps) {
   const [layout, setLayout] = useState<ArrowLayout | null>(null);
   const [opacity, setOpacity] = useState(1);
@@ -108,7 +110,7 @@ export function GridHintArrow({
       observer.disconnect();
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [containerRef, gridSize, interactiveRef, referenceRef]);
+  }, [animationKey, containerRef, gridSize, interactiveRef, referenceRef]);
 
   if (!layout || !layout.path) return null;
 

@@ -37,6 +37,7 @@ function ArrowHarness() {
       <div ref={referenceRef} className="grid grid-readonly" />
       <div ref={interactiveRef} className="grid grid-interactive" />
       <GridHintArrow
+        animationKey={0}
         referenceRef={referenceRef}
         interactiveRef={interactiveRef}
         gridSize={4}

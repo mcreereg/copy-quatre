@@ -21,8 +21,8 @@ export function arrowShaftWidth(gridEdge: number): number {
   return gridEdge * ARROW_SHAFT_WIDTH_RATIO;
 }
 
-/** Arrowhead span relative to shaft width (classic arrow, narrowed 50%). */
-export const ARROW_HEAD_WIDTH_TO_SHAFT_RATIO = 1.5;
+/** Arrowhead span relative to shaft width (1.5× classic, +20%). */
+export const ARROW_HEAD_WIDTH_TO_SHAFT_RATIO = 1.8;
 /** Arrowhead depth relative to its width (equilateral-style ≈ 1×). */
 export const ARROW_HEAD_LENGTH_TO_WIDTH_RATIO = 1;
 

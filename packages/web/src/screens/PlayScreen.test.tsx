@@ -5,9 +5,10 @@ import {
   type GameState,
   type SessionSettings,
 } from "@copy-quatre/core";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HINT_TOTAL_MS } from "../components/gridHintGeometry";
 import { vibrateMatch } from "../platform/vibration";
 import { PlayScreen } from "./PlayScreen";
 
@@ -193,8 +194,44 @@ describe("PlayScreen", () => {
     expect(onQuit).toHaveBeenCalledOnce();
   });
 
-  it("shows hint arrow and glow when reference grid is tapped", async () => {
-    const user = userEvent.setup();
+  it("restarts hint animation for full duration on repeated reference tap", () => {
+    vi.useFakeTimers();
+    try {
+      const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+      const { container } = render(
+        <PlayScreen
+          state={makeState({ settings: { ...baseSession, gridSize: 2 } })}
+          dispatch={makeDispatch()}
+          onPause={vi.fn()}
+          onResume={vi.fn()}
+          onQuit={vi.fn()}
+        />,
+      );
+
+      const referenceGrid = container.querySelector(".grid-readonly") as HTMLElement;
+      fireEvent.pointerDown(referenceGrid);
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      fireEvent.pointerDown(referenceGrid);
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(350);
+      });
+      expect(container.querySelector(".grid-hint-arrow")).not.toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(HINT_TOTAL_MS - 350);
+      });
+      expect(container.querySelector(".grid-hint-arrow")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows hint arrow and glow when reference grid is tapped", () => {
     const { container } = render(
       <PlayScreen
         state={makeState({ settings: { ...baseSession, gridSize: 2 } })}
@@ -206,7 +243,7 @@ describe("PlayScreen", () => {
     );
 
     const referenceGrid = container.querySelector(".grid-readonly") as HTMLElement;
-    await user.pointer({ keys: "[MouseLeft>]", target: referenceGrid });
+    fireEvent.pointerDown(referenceGrid);
 
     expect(container.querySelector(".grid-glow")).not.toBeNull();
     expect(container.querySelector(".grid-hint-arrow")).not.toBeNull();
