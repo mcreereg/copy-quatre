@@ -5,7 +5,7 @@ import {
   type GameEvent,
   type GameState,
 } from "@copy-quatre/core";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../components/Button";
 import { cellIgniteKey } from "../components/cellIgnite";
 import { ExplodeLayer } from "../components/ExplodeLayer";
@@ -67,6 +67,7 @@ export function PlayScreen({
   const interactiveGridRef = useRef<HTMLDivElement>(null);
   const [hintActive, setHintActive] = useState(false);
   const [hintKey, setHintKey] = useState(0);
+  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelExtinguishRef = useRef<(key: string) => void>(() => {});
   const [fadingPath, setFadingPath] = useState<CellCoordinate[] | null>(null);
   const [failExtinguishKeys, setFailExtinguishKeys] = useState<Set<string>>(() => new Set());
@@ -137,9 +138,23 @@ export function PlayScreen({
   }, [dispatchWithEvents]);
 
   const handleReferenceTap = useCallback(() => {
+    if (hintTimeoutRef.current !== null) {
+      clearTimeout(hintTimeoutRef.current);
+    }
     setHintKey((key) => key + 1);
     setHintActive(true);
-    window.setTimeout(() => setHintActive(false), HINT_TOTAL_MS);
+    hintTimeoutRef.current = window.setTimeout(() => {
+      setHintActive(false);
+      hintTimeoutRef.current = null;
+    }, HINT_TOTAL_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hintTimeoutRef.current !== null) {
+        clearTimeout(hintTimeoutRef.current);
+      }
+    };
   }, []);
 
   const activePath = (state.strokePath?.length ?? 0) >= 2 ? state.strokePath : [];
@@ -214,6 +229,7 @@ export function PlayScreen({
           {hintActive && (
             <GridHintArrow
               key={hintKey}
+              animationKey={hintKey}
               referenceRef={referenceGridRef}
               interactiveRef={interactiveGridRef}
               gridSize={state.settings.gridSize}
