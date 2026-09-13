@@ -1,4 +1,4 @@
-export type PatternStyle = "cohesive" | "chaos";
+export type PatternStyle = "cohesive" | "chaos" | "serpentine";
 export type ColorMode = "light" | "dark";
 export type ThemeId = "yellow" | "cyan" | "magenta" | "green" | "orange";
 

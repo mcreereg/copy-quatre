@@ -10,7 +10,7 @@ import {
   DEFAULT_SETTINGS,
   formatTimeLimit,
   isAnimationActive,
-  modeShowsPatternStyle,
+  isPatternStyleLocked,
   resolveSessionSettings,
   stepGridSize,
   stepTimeLimitSec,
@@ -61,7 +61,10 @@ describe("settings", () => {
     expect(DEFAULT_SETTINGS.selectedMode).toBe("copy");
     expect(DEFAULT_SETTINGS.modes.copy).toEqual(DEFAULT_GAMEPLAY_SETTINGS);
     expect(DEFAULT_SETTINGS.modes.imposter).toEqual(DEFAULT_GAMEPLAY_SETTINGS);
-    expect(DEFAULT_SETTINGS.modes.serpentine).toEqual(DEFAULT_GAMEPLAY_SETTINGS);
+    expect(DEFAULT_SETTINGS.modes.serpentine).toEqual({
+      ...DEFAULT_GAMEPLAY_SETTINGS,
+      patternStyle: "serpentine",
+    });
     expect(DEFAULT_SETTINGS.global.colorMode).toBe("dark");
     expect(DEFAULT_SETTINGS.global.vibration).toBe(true);
     expect(DEFAULT_SETTINGS.global.animations).toEqual(DEFAULT_ANIMATION_SETTINGS);
@@ -74,10 +77,23 @@ describe("settings", () => {
     expect(settings.modes.serpentine.gridSize).toBe(4);
   });
 
-  it("hides pattern style for serpentine mode", () => {
-    expect(modeShowsPatternStyle("copy")).toBe(true);
-    expect(modeShowsPatternStyle("imposter")).toBe(true);
-    expect(modeShowsPatternStyle("serpentine")).toBe(false);
+  it("locks pattern style for serpentine mode", () => {
+    expect(isPatternStyleLocked("copy")).toBe(false);
+    expect(isPatternStyleLocked("imposter")).toBe(false);
+    expect(isPatternStyleLocked("serpentine")).toBe(true);
+  });
+
+  it("forces serpentine pattern style during validation", () => {
+    const s = validateSettings({
+      selectedMode: "serpentine",
+      global: DEFAULT_SETTINGS.global,
+      modes: {
+        copy: DEFAULT_GAMEPLAY_SETTINGS,
+        imposter: DEFAULT_GAMEPLAY_SETTINGS,
+        serpentine: { ...DEFAULT_GAMEPLAY_SETTINGS, patternStyle: "chaos" },
+      },
+    });
+    expect(s.modes.serpentine.patternStyle).toBe("serpentine");
   });
 
   it("clamps time limit to step", () => {

@@ -25,7 +25,7 @@ const baseSession = resolveSessionSettings({
   modes: {
     copy: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
     imposter: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
-    serpentine: { timeLimitSec: 90, gridSize: 2, patternStyle: "cohesive" },
+    serpentine: { timeLimitSec: 90, gridSize: 2, patternStyle: "serpentine" },
   },
 });
 
