@@ -66,6 +66,15 @@ describe("serpentine pattern", () => {
     expect(isSerpentineReferenceGrid(grid)).toBe(true);
   });
 
+  it("returns corner cell when all fallback growth fails", () => {
+    const grid = serpentineAlgo.generateSerpentinePattern(1, createRng(0), {
+      maxAttempts: 0,
+      minDensity: 0.05,
+      maxDensity: 0.95,
+    });
+    expect(grid).toEqual([[true]]);
+  });
+
   it("2x2 core alone has fold-back contact", () => {
     const path = [
       { row: 1, col: 1 },
