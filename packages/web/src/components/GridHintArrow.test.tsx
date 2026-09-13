@@ -78,6 +78,7 @@ describe("GridHintArrow", () => {
 
     const arrow = container.querySelector(".grid-hint-arrow");
     expect(arrow).not.toBeNull();
+    expect(arrow).toHaveStyle({ pointerEvents: "none" });
     expect(container.querySelector(".grid-hint-arrow-shape")).not.toBeNull();
   });
 });

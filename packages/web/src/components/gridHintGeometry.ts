@@ -14,6 +14,11 @@ export const HINT_ARROW_FADE_MS = 100;
 export const HINT_TOTAL_MS =
   HINT_GLOW_FADE_IN_MS + HINT_GLOW_FADE_OUT_MS;
 
+/** Arrow shaft width as fraction of one grid cell edge. */
+export const ARROW_SHAFT_WIDTH_RATIO = 0.2;
+/** Arrow outline thickness as fraction of one grid cell edge. */
+export const ARROW_OUTLINE_WIDTH_RATIO = 0.1;
+
 export function rectCenter(rect: Rect): Point {
   return {
     x: rect.left + rect.width / 2,
