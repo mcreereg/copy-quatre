@@ -4,6 +4,7 @@ import {
   arrowOpacityAtElapsed,
   arrowProgressAtElapsed,
   ARROW_OUTLINE_WIDTH_RATIO,
+  arrowHeadDimensions,
   arrowShaftWidth,
   buildArrowPath,
   HINT_TOTAL_MS,
@@ -71,8 +72,7 @@ export function GridHintArrow({
       const cellSide = gridEdge / gridSize;
       const outlineWidth = cellSide * ARROW_OUTLINE_WIDTH_RATIO;
       const shaftWidth = arrowShaftWidth(gridEdge);
-      const headLength = cellSide * 0.55;
-      const headWidth = cellSide * 0.9;
+      const { headWidth, headLength } = arrowHeadDimensions(shaftWidth);
 
       setLayout({
         width: containerRect.width,
