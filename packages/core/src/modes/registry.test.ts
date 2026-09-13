@@ -15,7 +15,7 @@ describe("mode registry", () => {
 
   it("gets mode by id", () => {
     expect(getGameMode("copy").name).toBe("Copy");
-    expect(getGameMode("imposter").referenceLabel).toBe("Target");
+    expect(getGameMode("imposter").name).toBe("Imposter");
   });
 
   it("throws for unknown mode", () => {

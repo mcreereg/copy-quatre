@@ -35,7 +35,5 @@ export type GameModeDefinition = {
   id: GameModeId;
   name: string;
   description: string;
-  referenceLabel: string;
-  interactiveLabel: string;
   createRound(context: RoundGenerationContext): GameRound;
 };
