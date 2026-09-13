@@ -68,6 +68,6 @@ describe("serpentine pattern", () => {
     }
     compactnessValues.sort((a, b) => a - b);
     const median = compactnessValues[Math.floor(compactnessValues.length / 2)];
-    expect(median).toBeGreaterThan(0.55);
+    expect(median).toBeGreaterThan(0.65);
   });
 });
