@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createGrid } from "../../grid.js";
-import { isPathGraph, onDegree } from "./pathGraph.js";
+import {
+  hasHamiltonianPath,
+  isBuiltSerpentinePath,
+  isPathGraph,
+  isSerpentineReferenceGrid,
+  onDegree,
+} from "./pathGraph.js";
 
 function gridFromRows(rows: string[]): ReturnType<typeof createGrid> {
   const size = rows.length;
@@ -65,5 +71,74 @@ describe("pathGraph", () => {
 
   it("rejects all-off grids", () => {
     expect(isPathGraph(gridFromRows(["00", "00"]))).toBe(false);
+  });
+
+  it("accepts a 2x2 blob for serpentine references", () => {
+    const grid = gridFromRows(["11", "11"]);
+    expect(isPathGraph(grid)).toBe(false);
+    expect(hasHamiltonianPath(grid)).toBe(true);
+    expect(isSerpentineReferenceGrid(grid)).toBe(true);
+  });
+
+  it("accepts incrementally built 2x2 path without Hamiltonian search", () => {
+    const grid = gridFromRows(["11", "11"]);
+    const path = [
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+      { row: 1, col: 1 },
+      { row: 1, col: 0 },
+    ];
+    expect(isBuiltSerpentinePath(grid, path)).toBe(true);
+  });
+
+  it("rejects invalid built serpentine paths", () => {
+    const grid = gridFromRows(["111", "101", "111"]);
+    expect(isBuiltSerpentinePath(grid, [])).toBe(false);
+    expect(
+      isBuiltSerpentinePath(grid, [
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+      ]),
+    ).toBe(false);
+    expect(
+      isBuiltSerpentinePath(grid, [
+        { row: 0, col: 0 },
+        { row: 1, col: 1 },
+        { row: 0, col: 2 },
+      ]),
+    ).toBe(false);
+
+    const cross = gridFromRows(["010", "111", "010"]);
+    const crossPath = [
+      { row: 1, col: 0 },
+      { row: 1, col: 1 },
+      { row: 0, col: 1 },
+      { row: 1, col: 2 },
+      { row: 2, col: 1 },
+    ];
+    expect(isBuiltSerpentinePath(cross, crossPath)).toBe(false);
+  });
+
+  it("rejects serpentine references with invalid topology", () => {
+    expect(isSerpentineReferenceGrid(gridFromRows(["00", "00"]))).toBe(false);
+    expect(isSerpentineReferenceGrid(gridFromRows(["10", "01"]))).toBe(false);
+    expect(
+      isSerpentineReferenceGrid(
+        gridFromRows([
+          "111",
+          "111",
+          "111",
+        ]),
+      ),
+    ).toBe(false);
+    expect(isSerpentineReferenceGrid(gridFromRows(["010", "111", "010"]))).toBe(false);
+  });
+
+  it("detects Hamiltonian path on a single cell", () => {
+    expect(hasHamiltonianPath(gridFromRows(["10", "00"]))).toBe(true);
+  });
+
+  it("rejects Hamiltonian path search on empty grids", () => {
+    expect(hasHamiltonianPath(gridFromRows(["00", "00"]))).toBe(false);
   });
 });
