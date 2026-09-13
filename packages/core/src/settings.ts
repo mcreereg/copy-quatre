@@ -31,12 +31,12 @@ function createDefaultModeProfiles(): Record<GameModeId, GameplaySettings> {
   return {
     copy: { ...DEFAULT_GAMEPLAY_SETTINGS },
     imposter: { ...DEFAULT_GAMEPLAY_SETTINGS },
-    serpentine: { ...DEFAULT_GAMEPLAY_SETTINGS },
+    serpentine: { ...DEFAULT_GAMEPLAY_SETTINGS, patternStyle: "serpentine" },
   };
 }
 
-export function modeShowsPatternStyle(modeId: GameModeId): boolean {
-  return modeId !== "serpentine";
+export function isPatternStyleLocked(modeId: GameModeId): boolean {
+  return modeId === "serpentine";
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -57,7 +57,8 @@ export const TIME_LIMIT_STEP = 30;
 export const GRID_SIZE_MIN = 2;
 export const GRID_SIZE_MAX = 10;
 
-export const PATTERN_STYLES: PatternStyle[] = ["cohesive", "chaos"];
+export const CYCLABLE_PATTERN_STYLES: PatternStyle[] = ["cohesive", "chaos"];
+export const PATTERN_STYLES: PatternStyle[] = ["cohesive", "chaos", "serpentine"];
 export const THEME_IDS: ThemeId[] = ["yellow", "cyan", "magenta", "green", "orange"];
 export const COLOR_MODES: ColorMode[] = ["light", "dark"];
 
@@ -82,8 +83,9 @@ export function stepGridSize(current: number, delta: number): number {
 }
 
 export function cyclePatternStyle(current: PatternStyle): PatternStyle {
-  const idx = PATTERN_STYLES.indexOf(current);
-  return PATTERN_STYLES[(idx + 1) % PATTERN_STYLES.length];
+  const idx = CYCLABLE_PATTERN_STYLES.indexOf(current as (typeof CYCLABLE_PATTERN_STYLES)[number]);
+  const safeIdx = idx >= 0 ? idx : 0;
+  return CYCLABLE_PATTERN_STYLES[(safeIdx + 1) % CYCLABLE_PATTERN_STYLES.length];
 }
 
 export function cycleTheme(current: ThemeId): ThemeId {
@@ -177,6 +179,8 @@ export function validateSettings(raw: unknown): Settings {
       modes[modeId] = validateGameplaySettings(modeObj[modeId], modes[modeId]);
     }
   }
+
+  modes.serpentine.patternStyle = "serpentine";
 
   return { selectedMode, global, modes };
 }

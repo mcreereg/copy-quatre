@@ -3,7 +3,7 @@ import {
   cycleTheme,
   formatTimeLimit,
   getGameMode,
-  modeShowsPatternStyle,
+  isPatternStyleLocked,
   stepGridSize,
   stepTimeLimitSec,
   toggleColorMode,
@@ -75,19 +75,18 @@ export function SettingsScreen({
           onDecrement={() => updateProfile({ gridSize: stepGridSize(profile.gridSize, -1) })}
           onIncrement={() => updateProfile({ gridSize: stepGridSize(profile.gridSize, 1) })}
         />
-        {modeShowsPatternStyle(settings.selectedMode) && (
-          <div className="setting-row">
-            <span className="stepper-label">Pattern style</span>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                updateProfile({ patternStyle: cyclePatternStyle(profile.patternStyle) })
-              }
-            >
-              {profile.patternStyle}
-            </Button>
-          </div>
-        )}
+        <div className="setting-row">
+          <span className="stepper-label">Pattern style</span>
+          <Button
+            variant="secondary"
+            disabled={isPatternStyleLocked(settings.selectedMode)}
+            onClick={() =>
+              updateProfile({ patternStyle: cyclePatternStyle(profile.patternStyle) })
+            }
+          >
+            {profile.patternStyle}
+          </Button>
+        </div>
       </div>
       <hr className="settings-divider" aria-hidden="true" />
       <h3 className="settings-section-heading">Global</h3>
