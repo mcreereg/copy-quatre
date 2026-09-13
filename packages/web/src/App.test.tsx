@@ -10,6 +10,7 @@ import { Preferences, resetPreferencesMock } from "./test/mocks/preferences";
 
 vi.mock("@capacitor/preferences", () => import("./test/mocks/preferences"));
 
+import { appVersionDisplay } from "./appVersion";
 import { vibrateTimeExpired } from "./platform/vibration";
 import { App } from "./App";
 import { CURRENT_DATA_GENERATION, DATA_GENERATION_KEY, SETTINGS_KEY } from "./platform/storage";
@@ -39,6 +40,7 @@ describe("App", () => {
       expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     });
 
+    expect(screen.getByLabelText(`Version ${appVersionDisplay}`)).toBeInTheDocument();
     expect(screen.getByText("Copy")).toBeInTheDocument();
     expect(screen.getByText("Recreate each target from an empty grid.")).toBeInTheDocument();
 

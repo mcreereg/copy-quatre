@@ -1,8 +1,18 @@
 import { Capacitor } from "@capacitor/core";
 import { NativeVibration } from "./nativeVibration";
 
-const MATCH_VIBRATION_TIMINGS = [100, 50, 50, 50, 250];
-const MATCH_VIBRATION_AMPLITUDES = [200, 160, 120, 80, 40];
+const MATCH_VIBRATION_STEP_COUNT = 14;
+const MATCH_VIBRATION_STEP_MS = 25;
+const MATCH_VIBRATION_TIMINGS = Array.from(
+  { length: MATCH_VIBRATION_STEP_COUNT },
+  () => MATCH_VIBRATION_STEP_MS,
+);
+const MATCH_VIBRATION_AMPLITUDES = [
+  ...Array.from({ length: MATCH_VIBRATION_STEP_COUNT - 3 }, (_, i) => 200 - i * 10),
+  90,
+  60,
+  30,
+];
 const MATCH_VIBRATION_PATTERN = [55, 12, 38, 12, 24, 12, 14, 12, 8];
 const TIME_EXPIRED_VIBRATION_PATTERN = [75, 75, 75, 75, 75];
 const TOGGLE_ON_VIBRATION_MS = 50;

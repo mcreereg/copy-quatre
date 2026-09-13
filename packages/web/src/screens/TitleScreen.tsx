@@ -1,5 +1,6 @@
 import heroImage from "@graphics/four-cats-4x4-grid-v4.png";
 import type { GameModeId } from "@copy-quatre/core";
+import { appVersionDisplay } from "../appVersion";
 import { Button } from "../components/Button";
 import { ModeSelector } from "../components/ModeSelector";
 
@@ -27,7 +28,12 @@ export function TitleScreen({
         alt="Four cats on a 4×4 grid"
         className="title-hero"
       />
-      <h1 className="title">Copy Quatre</h1>
+      <div className="title-block">
+        <h1 className="title">Copy Quatre</h1>
+        <span className="title-version" aria-label={`Version ${appVersionDisplay}`}>
+          {appVersionDisplay}
+        </span>
+      </div>
       <ModeSelector selectedMode={selectedMode} onChange={onModeChange} />
       <div className="button-stack">
         <Button onClick={onStart}>Start</Button>
