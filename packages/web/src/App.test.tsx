@@ -39,6 +39,7 @@ describe("App", () => {
       expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     });
 
+    expect(screen.getByLabelText("Version v2.1.22")).toBeInTheDocument();
     expect(screen.getByText("Copy")).toBeInTheDocument();
     expect(screen.getByText("Recreate each target from an empty grid.")).toBeInTheDocument();
 
