@@ -48,9 +48,27 @@ body {
   border-radius: 8px;
 }
 
+.title-block {
+  position: relative;
+  display: inline-block;
+}
+
 .title {
   font-size: 2.5rem;
   color: var(--accent);
+}
+
+.title-version {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.125rem;
+  font-size: 0.625rem;
+  line-height: 1;
+  color: var(--textMuted);
+  opacity: 0.45;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .subtitle {
