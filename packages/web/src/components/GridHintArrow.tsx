@@ -46,11 +46,16 @@ export function GridHintArrow({
   useLayoutEffect(() => {
     const referenceEl = referenceRef.current;
     const interactiveEl = interactiveRef.current;
+    if (!referenceEl || !interactiveEl) {
+      setLayout(null);
+      return;
+    }
+
     const containerEl =
       containerRef.current ??
       referenceEl.closest(".grids-container") ??
       interactiveEl.closest(".grids-container");
-    if (!referenceEl || !interactiveEl || !containerEl) {
+    if (!containerEl) {
       setLayout(null);
       return;
     }

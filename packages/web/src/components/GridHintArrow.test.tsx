@@ -54,8 +54,10 @@ class ResizeObserverMock {
 describe("GridHintArrow", () => {
   beforeEach(() => {
     vi.stubGlobal("ResizeObserver", ResizeObserverMock);
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
-      const el = this as HTMLElement;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const el = this;
       if (el.classList.contains("grids-container")) return containerRect;
       if (el.classList.contains("grid-readonly")) {
         return { ...gridRect, left: 0, right: 100 };
