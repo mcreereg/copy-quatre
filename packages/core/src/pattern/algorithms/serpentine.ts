@@ -406,7 +406,7 @@ function makeDeterministicPathFallback(size: number, targetOn: number, minOn: nu
   return fallback;
 }
 
-function resolveScoringWeights(params: Record<string, unknown>): ScoringWeights {
+function resolveScoringWeights(params: AlgorithmParams): ScoringWeights {
   return {
     sideWeight: paramNumber(params, "sideWeight"),
     turnWeight: paramNumber(params, "turnWeight"),
