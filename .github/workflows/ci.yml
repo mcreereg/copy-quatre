@@ -75,7 +75,8 @@ jobs:
         env:
           VITE_BETA_BUILD: ${{ github.base_ref == 'beta' || github.ref == 'refs/heads/beta' }}
           VITE_GIT_SHA: ${{ github.sha }}
-      - run: pnpm --filter @copy-quatre/web cap:sync
+      - name: Sync Capacitor Android
+        run: pnpm --filter @copy-quatre/web exec cap sync android
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
