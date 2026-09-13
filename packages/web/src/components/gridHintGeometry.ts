@@ -20,6 +20,25 @@ export const ARROW_SHAFT_WIDTH_RATIO = 0.2;
 export function arrowShaftWidth(gridEdge: number): number {
   return gridEdge * ARROW_SHAFT_WIDTH_RATIO;
 }
+
+/** Arrowhead span relative to shaft width (classic arrow ≈ 3×). */
+export const ARROW_HEAD_WIDTH_TO_SHAFT_RATIO = 3;
+/** Arrowhead depth relative to its width (equilateral-style ≈ 1×). */
+export const ARROW_HEAD_LENGTH_TO_WIDTH_RATIO = 1;
+
+export type ArrowHeadDimensions = {
+  headWidth: number;
+  headLength: number;
+};
+
+export function arrowHeadDimensions(shaftWidth: number): ArrowHeadDimensions {
+  const headWidth = shaftWidth * ARROW_HEAD_WIDTH_TO_SHAFT_RATIO;
+  return {
+    headWidth,
+    headLength: headWidth * ARROW_HEAD_LENGTH_TO_WIDTH_RATIO,
+  };
+}
+
 /** Arrow outline thickness as fraction of one grid cell edge. */
 export const ARROW_OUTLINE_WIDTH_RATIO = 0.1;
 

@@ -3,7 +3,10 @@ import {
   arrowEndpointsAtProgress,
   arrowOpacityAtElapsed,
   arrowProgressAtElapsed,
+  ARROW_HEAD_LENGTH_TO_WIDTH_RATIO,
+  ARROW_HEAD_WIDTH_TO_SHAFT_RATIO,
   ARROW_SHAFT_WIDTH_RATIO,
+  arrowHeadDimensions,
   arrowShaftWidth,
   buildArrowPath,
   closestEdgePoint,
@@ -51,11 +54,18 @@ describe("gridHintGeometry", () => {
     expect(arrowShaftWidth(200)).toBe(40);
   });
 
+  it("sizes arrowhead like a classic arrow (3× shaft width, depth = width)", () => {
+    expect(ARROW_HEAD_WIDTH_TO_SHAFT_RATIO).toBe(3);
+    expect(ARROW_HEAD_LENGTH_TO_WIDTH_RATIO).toBe(1);
+    expect(arrowHeadDimensions(40)).toEqual({ headWidth: 120, headLength: 120 });
+  });
+
   it("points arrow tip at head with head base behind tip along travel", () => {
-    const path = buildArrowPath({ x: 0, y: 50 }, { x: 100, y: 50 }, 20, 15, 30);
+    const { headWidth, headLength } = arrowHeadDimensions(20);
+    const path = buildArrowPath({ x: 0, y: 50 }, { x: 100, y: 50 }, 20, headLength, headWidth);
     expect(path).toContain("L 100 50");
-    expect(path).toContain("L 85 65");
-    expect(path).toContain("L 85 35");
+    expect(path).toContain("L 40 80");
+    expect(path).toContain("L 40 20");
   });
 
   it("syncs glow timing", () => {
