@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { NativeVibration } from "./nativeVibration";
 
-const MATCH_VIBRATION_STEP_COUNT = 20;
+const MATCH_VIBRATION_STEP_COUNT = 14;
 const MATCH_VIBRATION_STEP_MS = 25;
 const MATCH_VIBRATION_TIMINGS = Array.from(
   { length: MATCH_VIBRATION_STEP_COUNT },
