@@ -2,11 +2,8 @@ export type GridAreaMetrics = {
   width: number;
   height: number;
   gapPx: number;
-  labelAllowancePx: number;
 };
 
-/** Matches `.play-screen .grid { calc(100cqh - 1.25rem) }`. */
-export const GRID_LABEL_ALLOWANCE_REM = 1.25;
 /** Matches `.play-screen .grids-container.grids-side-by-side { gap: max(25px, 0.75rem) }`. */
 export const GRIDS_SIDE_BY_SIDE_MIN_GAP_PX = 25;
 export const GRIDS_STACKED_GAP_REM = 0.75;
@@ -36,12 +33,11 @@ export function parseGap(style: CSSStyleDeclaration): number {
 type GridAreaDimensions = {
   width: number;
   height: number;
-  labelAllowancePx: number;
 };
 
 /** Largest square grid size for a given layout inside the play area. */
 export function maxSquareGridSize(
-  { width, height, labelAllowancePx }: GridAreaDimensions,
+  { width, height }: GridAreaDimensions,
   sideBySide: boolean,
   gapPx = sideBySide ? sideBySideGapPx() : stackedGapPx(),
 ): number {
@@ -49,11 +45,11 @@ export function maxSquareGridSize(
 
   if (sideBySide) {
     const wrapperWidth = (width - gapPx) / 2;
-    return Math.max(0, Math.min(wrapperWidth, height - labelAllowancePx));
+    return Math.max(0, Math.min(wrapperWidth, height));
   }
 
   const wrapperHeight = (height - gapPx) / 2;
-  return Math.max(0, Math.min(width, wrapperHeight - labelAllowancePx));
+  return Math.max(0, Math.min(width, wrapperHeight));
 }
 
 /** Pick side-by-side when it yields a strictly larger square grid. */
@@ -61,7 +57,6 @@ export function preferSideBySideLayout(metrics: GridAreaMetrics): boolean {
   const dimensions = {
     width: metrics.width,
     height: metrics.height,
-    labelAllowancePx: metrics.labelAllowancePx,
   };
   const stacked = maxSquareGridSize(dimensions, false, stackedGapPx());
   const beside = maxSquareGridSize(dimensions, true, sideBySideGapPx());
@@ -76,7 +71,6 @@ export function measureGridArea(playScreen: HTMLElement): GridAreaMetrics | null
       width: rect.width,
       height: rect.height,
       gapPx: parseGap(getComputedStyle(container)),
-      labelAllowancePx: GRID_LABEL_ALLOWANCE_REM * remPx(),
     };
   }
 
@@ -96,6 +90,5 @@ export function measureGridArea(playScreen: HTMLElement): GridAreaMetrics | null
     width,
     height,
     gapPx: 0.75 * remPx(),
-    labelAllowancePx: GRID_LABEL_ALLOWANCE_REM * remPx(),
   };
 }

@@ -7,7 +7,7 @@ import {
 } from "@copy-quatre/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { vibrateMatch } from "../platform/vibration";
 import { PlayScreen } from "./PlayScreen";
 
@@ -55,9 +55,26 @@ function makeDispatch(events: GameEvent[] = []) {
   return vi.fn(() => events);
 }
 
+const gridRect: DOMRect = {
+  left: 0,
+  top: 0,
+  width: 120,
+  height: 120,
+  right: 120,
+  bottom: 120,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
+};
+
 describe("PlayScreen", () => {
   beforeEach(() => {
     vi.mocked(vibrateMatch).mockClear();
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(gridRect);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("vibrates on scored when vibration enabled", async () => {
@@ -174,6 +191,39 @@ describe("PlayScreen", () => {
 
     await user.click(hud!.children[0] as HTMLElement);
     expect(onQuit).toHaveBeenCalledOnce();
+  });
+
+  it("shows hint arrow and glow when reference grid is tapped", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <PlayScreen
+        state={makeState({ settings: { ...baseSession, gridSize: 2 } })}
+        dispatch={makeDispatch()}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    const referenceGrid = container.querySelector(".grid-readonly") as HTMLElement;
+    await user.pointer({ keys: "[MouseLeft>]", target: referenceGrid });
+
+    expect(container.querySelector(".grid-glow")).not.toBeNull();
+    expect(container.querySelector(".grid-hint-arrow")).not.toBeNull();
+  });
+
+  it("does not render grid labels", () => {
+    const { container } = render(
+      <PlayScreen
+        state={makeState()}
+        dispatch={makeDispatch()}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector(".grid-label")).toBeNull();
   });
 
   it("mounts explode layer container when playing", () => {
