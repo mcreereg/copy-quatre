@@ -4,6 +4,7 @@ import {
   arrowOpacityAtElapsed,
   arrowProgressAtElapsed,
   ARROW_SHAFT_WIDTH_RATIO,
+  arrowShaftWidth,
   buildArrowPath,
   closestEdgePoint,
   glowOpacityAtElapsed,
@@ -45,8 +46,16 @@ describe("gridHintGeometry", () => {
     expect(path.endsWith("Z")).toBe(true);
   });
 
-  it("uses 20% cell edge for arrow shaft width", () => {
+  it("uses 20% grid edge for arrow shaft width", () => {
     expect(ARROW_SHAFT_WIDTH_RATIO).toBe(0.2);
+    expect(arrowShaftWidth(200)).toBe(40);
+  });
+
+  it("points arrow tip at head with head base behind tip along travel", () => {
+    const path = buildArrowPath({ x: 0, y: 50 }, { x: 100, y: 50 }, 20, 15, 30);
+    expect(path).toContain("L 100 50");
+    expect(path).toContain("L 85 65");
+    expect(path).toContain("L 85 35");
   });
 
   it("syncs glow timing", () => {
