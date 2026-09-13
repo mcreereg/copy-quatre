@@ -134,8 +134,6 @@ export function PlayScreen({
   }, [dispatchWithEvents]);
 
   const activePath = (state.strokePath?.length ?? 0) >= 2 ? state.strokePath : [];
-  const overlayPath = fadingPath ?? activePath;
-  const overlayFading = fadingPath !== null;
 
   return (
     <div className="screen play-screen" ref={playScreenRef}>
@@ -189,11 +187,14 @@ export function PlayScreen({
             onPointerUp={handlePointerUp}
             overlay={
               isSerpentine ? (
-                <PathOverlay
-                  path={overlayPath}
-                  gridRef={interactiveGridRef}
-                  fading={overlayFading}
-                />
+                <>
+                  {fadingPath && fadingPath.length >= 2 && (
+                    <PathOverlay path={fadingPath} gridRef={interactiveGridRef} fading />
+                  )}
+                  {activePath.length >= 2 && (
+                    <PathOverlay path={activePath} gridRef={interactiveGridRef} />
+                  )}
+                </>
               ) : undefined
             }
           />
