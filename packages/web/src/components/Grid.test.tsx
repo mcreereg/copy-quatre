@@ -52,6 +52,24 @@ describe("Grid", () => {
     vi.useRealTimers();
   });
 
+  it("fires onReferenceTap when readonly grid is pressed", () => {
+    const onReferenceTap = vi.fn();
+    const { container } = render(<Grid grid={allOff(2)} onReferenceTap={onReferenceTap} />);
+    const grid = container.querySelector(".grid-readonly") as HTMLElement;
+    fireEvent.pointerDown(grid, { clientX: 25, clientY: 25, pointerId: 1, buttons: 1 });
+    expect(onReferenceTap).toHaveBeenCalledOnce();
+  });
+
+  it("shows glow overlay on interactive grid when hint is active", () => {
+    const { container, rerender } = render(
+      <Grid grid={allOff(2)} interactive hintGlowActive={false} hintGlowKey={0} />,
+    );
+    expect(container.querySelector(".grid-glow")).toBeNull();
+
+    rerender(<Grid grid={allOff(2)} interactive hintGlowActive hintGlowKey={1} />);
+    expect(container.querySelector(".grid-glow")).not.toBeNull();
+  });
+
   it("paints across cells during drag via pointer move", () => {
     const onPointerDown = vi.fn();
     const onPointerEnter = vi.fn();

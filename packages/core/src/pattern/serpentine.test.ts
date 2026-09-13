@@ -54,7 +54,7 @@ describe("serpentine pattern", () => {
           expect(isSerpentineReferenceGrid(grid)).toBe(true);
         }
       },
-      size >= 10 ? 15_000 : undefined,
+      size >= 10 ? 45_000 : undefined,
     );
   }
 

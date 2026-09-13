@@ -9,13 +9,16 @@ import {
   type Ref,
 } from "react";
 import { cellIgniteKey, useCellToggleAnims } from "./cellIgnite.js";
+import { GridGlow } from "./GridGlow.js";
 import { SHAKE_DURATION_MS, type CellShakeSpec } from "./gridShake.js";
 
 type GridProps = {
   grid: GridType;
   interactive?: boolean;
-  label?: string;
   gridRef?: Ref<HTMLDivElement>;
+  hintGlowActive?: boolean;
+  hintGlowKey?: number;
+  onReferenceTap?: () => void;
   shakeSpecs?: ReadonlyMap<string, CellShakeSpec>;
   cellOnBlink?: boolean;
   cellOffBlink?: boolean;
@@ -91,8 +94,10 @@ function cellShakeStyle(spec: CellShakeSpec | undefined): CSSProperties | undefi
 export function Grid({
   grid,
   interactive = false,
-  label,
   gridRef: externalGridRef,
+  hintGlowActive = false,
+  hintGlowKey = 0,
+  onReferenceTap,
   shakeSpecs,
   cellOnBlink = true,
   cellOffBlink = true,
@@ -185,13 +190,15 @@ export function Grid({
 
   return (
     <div className="grid-wrapper">
-      {label && <div className="grid-label">{label}</div>}
       <div
         ref={setGridRef}
         className={`grid ${interactive ? "grid-interactive" : "grid-readonly"}`}
         style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
         onPointerDown={(e) => {
-          if (!interactive) return;
+          if (!interactive) {
+            onReferenceTap?.();
+            return;
+          }
           e.preventDefault();
           dragging.current = true;
 
@@ -237,6 +244,7 @@ export function Grid({
           }),
         )}
         {overlay}
+        {interactive && <GridGlow active={hintGlowActive} animationKey={hintGlowKey} />}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TOOLS="$ROOT/.tools"
-NODE_VERSION="20.18.2"
+NODE_VERSION="24.20.0"
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64) NODE_ARCH="x64" ;;

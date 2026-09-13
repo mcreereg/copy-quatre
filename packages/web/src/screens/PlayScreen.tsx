@@ -1,16 +1,17 @@
 import {
-  getGameMode,
   isAnimationActive,
   type CellCoordinate,
   type GameAction,
   type GameEvent,
   type GameState,
 } from "@copy-quatre/core";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../components/Button";
 import { cellIgniteKey } from "../components/cellIgnite";
 import { ExplodeLayer } from "../components/ExplodeLayer";
 import { Grid } from "../components/Grid";
+import { GridHintArrow } from "../components/GridHintArrow";
+import { HINT_TOTAL_MS } from "../components/gridHintGeometry";
 import { PATH_FADE_MS, PathOverlay } from "../components/PathOverlay";
 import { useExplodeAnimation } from "../hooks/useExplodeAnimation";
 import { useGridLayout } from "../hooks/useGridLayout";
@@ -59,11 +60,14 @@ export function PlayScreen({
   onQuit,
 }: PlayScreenProps) {
   const paused = state.phase === "paused";
-  const mode = getGameMode(state.settings.mode);
   const isSerpentine = state.settings.mode === "serpentine";
   const playScreenRef = useRef<HTMLDivElement>(null);
+  const gridsContainerRef = useRef<HTMLDivElement>(null);
   const referenceGridRef = useRef<HTMLDivElement>(null);
   const interactiveGridRef = useRef<HTMLDivElement>(null);
+  const [hintActive, setHintActive] = useState(false);
+  const [hintKey, setHintKey] = useState(0);
+  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelExtinguishRef = useRef<(key: string) => void>(() => {});
   const [fadingPath, setFadingPath] = useState<CellCoordinate[] | null>(null);
   const [failExtinguishKeys, setFailExtinguishKeys] = useState<Set<string>>(() => new Set());
@@ -133,6 +137,26 @@ export function PlayScreen({
     dispatchWithEvents({ type: "POINTER_UP" });
   }, [dispatchWithEvents]);
 
+  const handleReferenceTap = useCallback(() => {
+    if (hintTimeoutRef.current !== null) {
+      clearTimeout(hintTimeoutRef.current);
+    }
+    setHintKey((key) => key + 1);
+    setHintActive(true);
+    hintTimeoutRef.current = window.setTimeout(() => {
+      setHintActive(false);
+      hintTimeoutRef.current = null;
+    }, HINT_TOTAL_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hintTimeoutRef.current !== null) {
+        clearTimeout(hintTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const activePath = (state.strokePath?.length ?? 0) >= 2 ? state.strokePath : [];
 
   return (
@@ -164,18 +188,22 @@ export function PlayScreen({
       )}
 
       {!paused && (
-        <div className={`grids-container${sideBySide ? " grids-side-by-side" : ""}`}>
+        <div
+          ref={gridsContainerRef}
+          className={`grids-container${sideBySide ? " grids-side-by-side" : ""}`}
+        >
           <Grid
             grid={state.reference}
-            label={mode.referenceLabel}
             gridRef={referenceGridRef}
             shakeSpecs={shakes?.ref}
+            onReferenceTap={handleReferenceTap}
           />
           <Grid
             grid={state.interactive}
             interactive
-            label={mode.interactiveLabel}
             gridRef={interactiveGridRef}
+            hintGlowActive={hintActive}
+            hintGlowKey={hintKey}
             shakeSpecs={shakes?.int}
             cellOnBlink={cellOnBlink}
             cellOffBlink={cellOffBlink}
@@ -198,6 +226,16 @@ export function PlayScreen({
               ) : undefined
             }
           />
+          {hintActive && (
+            <GridHintArrow
+              key={hintKey}
+              animationKey={hintKey}
+              referenceRef={referenceGridRef}
+              interactiveRef={interactiveGridRef}
+              gridSize={state.settings.gridSize}
+              containerRef={gridsContainerRef}
+            />
+          )}
         </div>
       )}
     </div>

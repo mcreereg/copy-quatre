@@ -11,7 +11,7 @@ Installs Node.js and pnpm into `.tools/` (no global system packages):
 source scripts/env.sh
 ```
 
-Or if you already have Node 20+ and pnpm:
+Or if you already have Node 24.20.0 and pnpm:
 
 ```bash
 pnpm install

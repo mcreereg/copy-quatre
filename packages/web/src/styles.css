@@ -148,8 +148,13 @@ body {
   transition: opacity 0.15s;
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   opacity: 0.8;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .btn-primary {
@@ -418,6 +423,33 @@ body {
   overflow: hidden;
 }
 
+.grid-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: var(--bgFlash);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.grid-hint-arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 110;
+  overflow: visible;
+}
+
+.grid-hint-arrow-shape {
+  fill: var(--cellOn);
+  stroke: #000;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
 .path-overlay {
   position: absolute;
   inset: 0;
@@ -447,13 +479,9 @@ body {
   }
 }
 
-.play-screen .grid-label {
-  flex-shrink: 0;
-}
-
 .play-screen .grid {
   flex: none;
-  width: min(100cqw, calc(100cqh - 1.25rem));
+  width: min(100cqw, 100cqh);
   height: auto;
   max-width: 100%;
   aspect-ratio: 1;
@@ -491,6 +519,7 @@ body {
   gap: 1.5rem;
   width: 100%;
   max-width: 700px;
+  position: relative;
 }
 
 .play-screen .grids-container.grids-side-by-side {
@@ -504,12 +533,6 @@ body {
   flex-direction: column;
   gap: 0.5rem;
   align-items: center;
-}
-
-.grid-label {
-  font-size: 0.875rem;
-  color: var(--textMuted);
-  text-align: center;
 }
 
 .grid {
@@ -539,10 +562,6 @@ body {
     font-size: 1.1rem;
   }
 
-  .play-screen .grid-label {
-    font-size: 0.75rem;
-  }
-
   .play-screen .grids-container {
     gap: 0.75rem;
   }
@@ -556,7 +575,8 @@ body {
   }
 }
 
-.grid-interactive {
+.grid-interactive,
+.grid-readonly {
   touch-action: none;
   cursor: pointer;
 }

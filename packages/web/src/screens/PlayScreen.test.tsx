@@ -5,9 +5,10 @@ import {
   type GameState,
   type SessionSettings,
 } from "@copy-quatre/core";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HINT_TOTAL_MS } from "../components/gridHintGeometry";
 import { vibrateMatch } from "../platform/vibration";
 import { PlayScreen } from "./PlayScreen";
 
@@ -34,7 +35,7 @@ const baseSession = resolveSessionSettings({
   modes: {
     copy: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
     imposter: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
-    serpentine: { timeLimitSec: 90, gridSize: 4, patternStyle: "cohesive" },
+    serpentine: { timeLimitSec: 90, gridSize: 4, patternStyle: "serpentine" },
   },
 });
 
@@ -55,9 +56,26 @@ function makeDispatch(events: GameEvent[] = []) {
   return vi.fn(() => events);
 }
 
+const gridRect: DOMRect = {
+  left: 0,
+  top: 0,
+  width: 120,
+  height: 120,
+  right: 120,
+  bottom: 120,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
+};
+
 describe("PlayScreen", () => {
   beforeEach(() => {
     vi.mocked(vibrateMatch).mockClear();
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(gridRect);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("vibrates on scored when vibration enabled", async () => {
@@ -174,6 +192,75 @@ describe("PlayScreen", () => {
 
     await user.click(hud!.children[0] as HTMLElement);
     expect(onQuit).toHaveBeenCalledOnce();
+  });
+
+  it("restarts hint animation for full duration on repeated reference tap", () => {
+    vi.useFakeTimers();
+    try {
+      const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+      const { container } = render(
+        <PlayScreen
+          state={makeState({ settings: { ...baseSession, gridSize: 2 } })}
+          dispatch={makeDispatch()}
+          onPause={vi.fn()}
+          onResume={vi.fn()}
+          onQuit={vi.fn()}
+        />,
+      );
+
+      const referenceGrid = container.querySelector(".grid-readonly") as HTMLElement;
+      fireEvent.pointerDown(referenceGrid);
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      fireEvent.pointerDown(referenceGrid);
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(350);
+      });
+      expect(container.querySelector(".grid-hint-arrow")).not.toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(HINT_TOTAL_MS - 350);
+      });
+      expect(container.querySelector(".grid-hint-arrow")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows hint arrow and glow when reference grid is tapped", () => {
+    const { container } = render(
+      <PlayScreen
+        state={makeState({ settings: { ...baseSession, gridSize: 2 } })}
+        dispatch={makeDispatch()}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    const referenceGrid = container.querySelector(".grid-readonly") as HTMLElement;
+    fireEvent.pointerDown(referenceGrid);
+
+    expect(container.querySelector(".grid-glow")).not.toBeNull();
+    expect(container.querySelector(".grid-hint-arrow")).not.toBeNull();
+  });
+
+  it("does not render grid labels", () => {
+    const { container } = render(
+      <PlayScreen
+        state={makeState()}
+        dispatch={makeDispatch()}
+        onPause={vi.fn()}
+        onResume={vi.fn()}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector(".grid-label")).toBeNull();
   });
 
   it("mounts explode layer container when playing", () => {

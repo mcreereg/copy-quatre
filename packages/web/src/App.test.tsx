@@ -66,6 +66,23 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "AI Disclosure" })).toBeInTheDocument();
   });
 
+  it("shows locked serpentine pattern style in settings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("button", { name: "Next game mode" }));
+    await user.click(screen.getByRole("button", { name: "Next game mode" }));
+
+    expect(screen.getByText("Serpentine")).toBeInTheDocument();
+    expect(screen.getByText("Pattern style")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "serpentine" })).toBeDisabled();
+  });
+
   it("cycles mode selector on title screen", async () => {
     const user = userEvent.setup();
     render(<App />);
