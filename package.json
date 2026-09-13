@@ -6,7 +6,7 @@
     "build": "pnpm -r build",
     "test": "pnpm --filter @copy-quatre/core build && pnpm -r test",
     "test:coverage": "pnpm --filter @copy-quatre/core test:coverage",
-    "dev": "pnpm --filter @copy-quatre/web dev",
+    "dev": "pnpm --filter @copy-quatre/core build && pnpm --filter @copy-quatre/web dev",
     "patgen": "pnpm --filter @copy-quatre/patgen dev",
     "patgen:cli": "pnpm --filter @copy-quatre/core build && pnpm --filter @copy-quatre/patgen cli",
     "cap:sync": "pnpm --filter @copy-quatre/web cap:sync",
