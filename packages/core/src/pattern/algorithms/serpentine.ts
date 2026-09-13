@@ -1,7 +1,7 @@
 import { createGrid, density, isInBounds } from "../../grid.js";
 import { createRng, type Rng } from "../../rng.js";
 import type { Grid } from "../../types.js";
-import { isPathGraph } from "../shared/pathGraph.js";
+import { isPathGraph, onDegree } from "../shared/pathGraph.js";
 import {
   desc,
   paramNumber,
@@ -38,16 +38,165 @@ function sampleTargetDensity(rng: Rng, min: number, max: number): number {
   return min + t * (max - min);
 }
 
-function shuffleDirections(rng: Rng): Array<{ dr: number; dc: number }> {
-  const dirs = [...DIRECTIONS];
-  for (let i = dirs.length - 1; i > 0; i--) {
-    const j = rng.nextInt(0, i);
-    [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
+type PathCell = { row: number; col: number };
+
+function countLitNeighborsExcept(
+  grid: Grid,
+  row: number,
+  col: number,
+  except: PathCell,
+): number {
+  let count = 0;
+  for (const { dr, dc } of DIRECTIONS) {
+    const nr = row + dr;
+    const nc = col + dc;
+    if (!isInBounds(grid, nr, nc) || !grid[nr][nc]) continue;
+    if (nr === except.row && nc === except.col) continue;
+    count++;
   }
-  return dirs;
+  return count;
 }
 
-type PathCell = { row: number; col: number };
+function countFreeNeighbors(grid: Grid, row: number, col: number): number {
+  let count = 0;
+  for (const { dr, dc } of DIRECTIONS) {
+    const nr = row + dr;
+    const nc = col + dc;
+    if (isInBounds(grid, nr, nc) && !grid[nr][nc]) count++;
+  }
+  return count;
+}
+
+/** Adding candidate must keep every ON cell at degree ≤ 2. */
+function canExtendPath(grid: Grid, tail: PathCell, candidate: PathCell): boolean {
+  if (onDegree(grid, tail.row, tail.col) >= 2) return false;
+
+  let sideContacts = 0;
+  for (const { dr, dc } of DIRECTIONS) {
+    const nr = candidate.row + dr;
+    const nc = candidate.col + dc;
+    if (!isInBounds(grid, nr, nc) || !grid[nr][nc]) continue;
+    if (nr === tail.row && nc === tail.col) continue;
+    sideContacts++;
+    if (onDegree(grid, nr, nc) >= 2) return false;
+  }
+
+  return sideContacts <= 1;
+}
+
+function scoreDenseNeighbor(
+  candidate: PathCell,
+  tail: PathCell,
+  prev: PathCell | undefined,
+  grid: Grid,
+  pathLength: number,
+  targetOn: number,
+  sideWeight: number,
+  turnWeight: number,
+): number {
+  let score =
+    countLitNeighborsExcept(grid, candidate.row, candidate.col, tail) * sideWeight;
+
+  if (prev) {
+    const lastDr = tail.row - prev.row;
+    const lastDc = tail.col - prev.col;
+    const moveDr = candidate.row - tail.row;
+    const moveDc = candidate.col - tail.col;
+    if (moveDr !== lastDr || moveDc !== lastDc) {
+      score += turnWeight;
+    }
+  }
+
+  const remaining = targetOn - pathLength;
+  const freeAfter = countFreeNeighbors(grid, candidate.row, candidate.col) - 1;
+  if (remaining > 1 && freeAfter < 1) {
+    score -= 100;
+  } else if (remaining > 2 && freeAfter < 2) {
+    score -= 40;
+  }
+
+  return score;
+}
+
+function pickDenseNeighbor(
+  neighbors: PathCell[],
+  tail: PathCell,
+  prev: PathCell | undefined,
+  grid: Grid,
+  pathLength: number,
+  targetOn: number,
+  sideWeight: number,
+  turnWeight: number,
+  rng: Rng,
+): PathCell {
+  if (neighbors.length === 1) return neighbors[0];
+
+  const scored = neighbors.map((cell) => ({
+    cell,
+    score: scoreDenseNeighbor(
+      cell,
+      tail,
+      prev,
+      grid,
+      pathLength,
+      targetOn,
+      sideWeight,
+      turnWeight,
+    ),
+  }));
+  const maxScore = Math.max(...scored.map((entry) => entry.score));
+  const top = scored.filter((entry) => entry.score >= maxScore - 1).map((entry) => entry.cell);
+  return rng.pick(top);
+}
+
+function growDensePath(
+  size: number,
+  rng: Rng,
+  targetOn: number,
+  start: PathCell,
+  sideWeight: number,
+  turnWeight: number,
+): Grid | null {
+  const grid = createGrid(size);
+  const path: PathCell[] = [start];
+  grid[start.row][start.col] = true;
+
+  while (path.length < targetOn) {
+    const tail = path[path.length - 1];
+    const prev = path.length >= 2 ? path[path.length - 2] : undefined;
+    const neighbors = DIRECTIONS.map(({ dr, dc }) => ({
+      row: tail.row + dr,
+      col: tail.col + dc,
+    })).filter(
+      (cell) =>
+        isInBounds(grid, cell.row, cell.col) &&
+        !grid[cell.row][cell.col] &&
+        canExtendPath(grid, tail, cell),
+    );
+
+    if (neighbors.length === 0) break;
+
+    const next = pickDenseNeighbor(
+      neighbors,
+      tail,
+      prev,
+      grid,
+      path.length,
+      targetOn,
+      sideWeight,
+      turnWeight,
+      rng,
+    );
+    grid[next.row][next.col] = true;
+    path.push(next);
+  }
+
+  if (path.length !== targetOn || !isPathGraph(grid)) {
+    return null;
+  }
+
+  return grid;
+}
 
 function growTailPath(
   size: number,
@@ -63,7 +212,7 @@ function growTailPath(
 
   while (path.length < targetOn) {
     const tail = path[path.length - 1];
-    const dirs = randomize ? shuffleDirections(rng) : directions;
+    const dirs = randomize ? rng.shuffle([...directions]) : directions;
     const neighbors = dirs
       .map(({ dr, dc }) => ({ row: tail.row + dr, col: tail.col + dc }))
       .filter((cell) => isInBounds(grid, cell.row, cell.col) && !grid[cell.row][cell.col]);
@@ -82,16 +231,46 @@ function growTailPath(
   return grid;
 }
 
-function tryGrowRandomPath(size: number, rng: Rng, targetOn: number): Grid | null {
-  const maxSeedAttempts = Math.min(size * size, 24);
+function tryGrowDensePath(
+  size: number,
+  rng: Rng,
+  targetOn: number,
+  sideWeight: number,
+  turnWeight: number,
+): Grid | null {
+  const maxSeedAttempts = Math.min(size * size, 16);
 
   for (let seedAttempt = 0; seedAttempt < maxSeedAttempts; seedAttempt++) {
     const start = { row: rng.nextInt(0, size - 1), col: rng.nextInt(0, size - 1) };
-    const grid = growTailPath(size, rng, targetOn, start, true);
+    const grid = growDensePath(size, rng, targetOn, start, sideWeight, turnWeight);
     if (grid) return grid;
   }
 
   return null;
+}
+
+/** Fraction of ON cells inside the path's bounding box — higher means tighter packing. */
+export function pathCompactness(grid: Grid): number {
+  let onCount = 0;
+  let minRow = grid.length;
+  let maxRow = 0;
+  let minCol = grid.length;
+  let maxCol = 0;
+
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
+      if (!grid[row][col]) continue;
+      onCount++;
+      minRow = Math.min(minRow, row);
+      maxRow = Math.max(maxRow, row);
+      minCol = Math.min(minCol, col);
+      maxCol = Math.max(maxCol, col);
+    }
+  }
+
+  if (onCount === 0) return 0;
+  const bboxArea = (maxRow - minRow + 1) * (maxCol - minCol + 1);
+  return onCount / bboxArea;
 }
 
 function makeDeterministicPathFallback(size: number, targetOn: number, minOn: number): Grid {
@@ -121,6 +300,8 @@ export function generateSerpentinePattern(
   const minDensity = paramNumber(p, "minDensity");
   const maxDensity = paramNumber(p, "maxDensity");
   const maxAttempts = paramNumber(p, "maxAttempts");
+  const sideWeight = paramNumber(p, "sideWeight");
+  const turnWeight = paramNumber(p, "turnWeight");
 
   const cellCount = size * size;
   const minOn = Math.max(1, Math.ceil(cellCount * minDensity));
@@ -129,7 +310,7 @@ export function generateSerpentinePattern(
   const targetOn = Math.max(minOn, Math.min(maxOn, sampledOn));
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const grid = tryGrowRandomPath(size, rng, targetOn);
+    const grid = tryGrowDensePath(size, rng, targetOn, sideWeight, turnWeight);
     if (!grid) continue;
 
     const d = density(grid);
@@ -144,8 +325,34 @@ export function generateSerpentinePattern(
 export const serpentineAlgorithm: AlgorithmDefinition = {
   id: "serpentine",
   name: "Serpentine",
-  description: "Single self-avoiding path at cohesive-like density.",
+  description: "Single self-avoiding path biased toward dense, fold-back serpentine shapes.",
   params: [
+    {
+      key: "sideWeight",
+      label: "Side adjacency weight",
+      type: "number",
+      default: 10,
+      min: 0,
+      max: 30,
+      step: 1,
+      description: desc(
+        "How strongly to favor next cells bordering earlier path cells. Higher values produce denser fold-back patterns.",
+        "8–15",
+      ),
+    },
+    {
+      key: "turnWeight",
+      label: "Turn weight",
+      type: "number",
+      default: 3,
+      min: 0,
+      max: 15,
+      step: 1,
+      description: desc(
+        "Bonus for changing direction instead of continuing straight. Encourages zig-zag and U-turn fills.",
+        "2–5",
+      ),
+    },
     {
       key: "minDensity",
       label: "Min density",

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { density, gridHash, hasAnyOn } from "../grid.js";
 import { createRng } from "../rng.js";
 import * as serpentineAlgo from "./algorithms/serpentine.js";
+import { pathCompactness } from "./algorithms/serpentine.js";
 import { isPathGraph } from "./shared/pathGraph.js";
 import { generateSerpentinePatternUnique } from "./serpentine.js";
 
@@ -57,5 +58,16 @@ describe("serpentine pattern", () => {
     });
     expect(hasAnyOn(grid)).toBe(true);
     expect(isPathGraph(grid)).toBe(true);
+  });
+
+  it("prefers dense fold-back paths over thin snakes", () => {
+    const compactnessValues: number[] = [];
+    for (let seed = 0; seed < 200; seed++) {
+      const grid = serpentineAlgo.generateSerpentinePattern(5, createRng(seed));
+      compactnessValues.push(pathCompactness(grid));
+    }
+    compactnessValues.sort((a, b) => a - b);
+    const median = compactnessValues[Math.floor(compactnessValues.length / 2)];
+    expect(median).toBeGreaterThan(0.55);
   });
 });
