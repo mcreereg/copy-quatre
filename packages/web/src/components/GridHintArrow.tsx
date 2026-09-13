@@ -4,7 +4,7 @@ import {
   arrowOpacityAtElapsed,
   arrowProgressAtElapsed,
   ARROW_OUTLINE_WIDTH_RATIO,
-  ARROW_SHAFT_WIDTH_RATIO,
+  arrowShaftWidth,
   buildArrowPath,
   HINT_TOTAL_MS,
   type Rect,
@@ -67,9 +67,10 @@ export function GridHintArrow({
       const referenceRect = elementRect(referenceEl, containerRect);
       const interactiveRect = elementRect(interactiveEl, containerRect);
       const { tail, head } = arrowEndpointsAtProgress(referenceRect, interactiveRect, progress);
-      const cellSide = referenceRect.width / gridSize;
+      const gridEdge = referenceRect.width;
+      const cellSide = gridEdge / gridSize;
       const outlineWidth = cellSide * ARROW_OUTLINE_WIDTH_RATIO;
-      const shaftWidth = cellSide * ARROW_SHAFT_WIDTH_RATIO;
+      const shaftWidth = arrowShaftWidth(gridEdge);
       const headLength = cellSide * 0.55;
       const headWidth = cellSide * 0.9;
 

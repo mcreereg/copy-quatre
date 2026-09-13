@@ -14,8 +14,12 @@ export const HINT_ARROW_FADE_MS = 100;
 export const HINT_TOTAL_MS =
   HINT_GLOW_FADE_IN_MS + HINT_GLOW_FADE_OUT_MS;
 
-/** Arrow shaft width as fraction of one grid cell edge. */
+/** Arrow shaft width as fraction of full grid edge length. */
 export const ARROW_SHAFT_WIDTH_RATIO = 0.2;
+
+export function arrowShaftWidth(gridEdge: number): number {
+  return gridEdge * ARROW_SHAFT_WIDTH_RATIO;
+}
 /** Arrow outline thickness as fraction of one grid cell edge. */
 export const ARROW_OUTLINE_WIDTH_RATIO = 0.1;
 
@@ -129,13 +133,17 @@ export function buildArrowPath(
     x: tail.x + ux * shaftEnd - px * shaftHalf,
     y: tail.y + uy * shaftEnd - py * shaftHalf,
   };
+  const headBase = {
+    x: head.x - ux * headLength,
+    y: head.y - uy * headLength,
+  };
   const headLeft = {
-    x: head.x + px * headHalf,
-    y: head.y + py * headHalf,
+    x: headBase.x + px * headHalf,
+    y: headBase.y + py * headHalf,
   };
   const headRight = {
-    x: head.x - px * headHalf,
-    y: head.y - py * headHalf,
+    x: headBase.x - px * headHalf,
+    y: headBase.y - py * headHalf,
   };
 
   return [
