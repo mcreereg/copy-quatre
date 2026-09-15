@@ -1,5 +1,5 @@
 import { createGrid, density, isInBounds } from "../../grid.js";
-import { createRng, type Rng } from "../../rng.js";
+import { type Rng } from "../../rng.js";
 import type { Grid } from "../../types.js";
 import { isBuiltSerpentinePath, onDegree } from "../shared/pathGraph.js";
 import { countPathSideAdjacencies, type PathCell } from "../shared/pathSideAdjacency.js";
@@ -21,13 +21,6 @@ const DIRECTIONS = [
   { dr: 1, dc: 0 },
   { dr: 0, dc: -1 },
   { dr: 0, dc: 1 },
-];
-
-const FALLBACK_DIRECTIONS = [
-  { dr: 0, dc: 1 },
-  { dr: 1, dc: 0 },
-  { dr: 0, dc: -1 },
-  { dr: -1, dc: 0 },
 ];
 
 /** Fold-back, zig-zag, compact fill, sprawl, meander, dense hook — each yields distinct blobs. */
@@ -157,6 +150,41 @@ function templateBounds(template: PathCell[]): { height: number; width: number }
     maxCol = Math.max(maxCol, cell.col);
   }
   return { height: maxRow + 1, width: maxCol + 1 };
+}
+
+function rotatePath90(path: PathCell[], _width: number, height: number): PathCell[] {
+  return path.map(({ row, col }) => ({ row: col, col: height - 1 - row }));
+}
+
+function reflectPathHorizontal(path: PathCell[], width: number): PathCell[] {
+  return path.map(({ row, col }) => ({ row, col: width - 1 - col }));
+}
+
+function pathVariantKey(path: PathCell[]): string {
+  return path.map((cell) => `${cell.row},${cell.col}`).join(";");
+}
+
+/** All rotations/reflections of a template path for varied start corners and directions. */
+function allTemplateVariants(template: PathCell[]): PathCell[][] {
+  const bounds = templateBounds(template);
+  const variants: PathCell[][] = [];
+  const seen = new Set<string>();
+  let current = template;
+  let width = bounds.width;
+  let height = bounds.height;
+
+  for (let rotation = 0; rotation < 4; rotation++) {
+    for (const candidate of [current, reflectPathHorizontal(current, width)]) {
+      const key = pathVariantKey(candidate);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      variants.push(candidate);
+    }
+    current = rotatePath90(current, width, height);
+    [width, height] = [height, width];
+  }
+
+  return variants;
 }
 
 function pathToGrid(size: number, path: PathCell[]): Grid {
@@ -423,7 +451,7 @@ function buildBlobPool(
 
   for (let attempt = 0; attempt < poolSize && pool.length < poolSize; attempt++) {
     const style = sampleStyle(rng, baseWeights);
-    const template = rng.pick(CORE_TEMPLATES);
+    const template = rng.pick(allTemplateVariants(rng.pick(CORE_TEMPLATES)));
     const bounds = templateBounds(template);
     const maxOriginRow = size - bounds.height;
     const maxOriginCol = size - bounds.width;
@@ -446,13 +474,30 @@ function buildBlobPool(
     );
     if (!result) continue;
 
-    const key = result.path.map((c) => `${c.row},${c.col}`).join(";");
+    const key = pathVariantKey(result.path);
     if (seen.has(key)) continue;
     seen.add(key);
     pool.push(result);
   }
 
   return pool;
+}
+
+function growRandomPath(
+  size: number,
+  rng: Rng,
+  targetOn: number,
+  maxAttempts: number,
+): Grid | null {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const start = {
+      row: rng.nextInt(0, size - 1),
+      col: rng.nextInt(0, size - 1),
+    };
+    const grid = growTailPath(size, rng, targetOn, start, true);
+    if (grid) return grid;
+  }
+  return null;
 }
 
 function growTailPath(
@@ -512,21 +557,15 @@ export function pathCompactness(grid: Grid): number {
   return onCount / bboxArea;
 }
 
-function makeDeterministicPathFallback(size: number, targetOn: number, minOn: number): Grid {
+function makePathFallback(size: number, targetOn: number, minOn: number, rng: Rng): Grid {
+  const maxAttempts = Math.max(size * size * 8, 16);
   for (let length = targetOn; length >= minOn; length--) {
-    const grid = growTailPath(
-      size,
-      createRng(0),
-      length,
-      { row: 0, col: 0 },
-      false,
-      FALLBACK_DIRECTIONS,
-    );
+    const grid = growRandomPath(size, rng, length, maxAttempts);
     if (grid) return grid;
   }
 
   const fallback = createGrid(size);
-  fallback[0][0] = true;
+  fallback[rng.nextInt(0, size - 1)][rng.nextInt(0, size - 1)] = true;
   return fallback;
 }
 
@@ -566,7 +605,7 @@ export function generateSerpentinePattern(
   const targetOn = Math.max(minOn, Math.min(maxOn, sampledOn));
   const minSideAdj = minSideAdjForLength(targetOn);
 
-  if (targetOn >= 4 && size >= 2) {
+  if (targetOn >= 3 && size >= 2) {
     const effectiveAttempts = size >= 8 ? 4 : size >= 6 ? 8 : maxAttempts;
     const poolTarget = size <= 5 ? POOL_SIZE : Math.max(6, Math.floor(POOL_SIZE / 2));
     const allCandidates: SearchResult[] = [];
@@ -582,7 +621,7 @@ export function generateSerpentinePattern(
         poolTarget,
       );
       for (const result of batch) {
-        const key = result.path.map((c) => `${c.row},${c.col}`).join(";");
+        const key = pathVariantKey(result.path);
         if (seen.has(key)) continue;
         seen.add(key);
         allCandidates.push(result);
@@ -594,7 +633,8 @@ export function generateSerpentinePattern(
     }
 
     if (size <= 6) {
-      for (let length = targetOn - 1; length >= Math.max(4, minOn); length--) {
+      const minLength = size <= 2 ? Math.max(3, minOn) : Math.max(4, minOn);
+      for (let length = targetOn - 1; length >= minLength; length--) {
         const shorterSide = minSideAdjForLength(length);
         const pool = buildBlobPool(
           size,
@@ -612,7 +652,7 @@ export function generateSerpentinePattern(
     }
   }
 
-  return makeDeterministicPathFallback(size, targetOn, minOn);
+  return makePathFallback(size, targetOn, minOn, rng);
 }
 
 export const serpentineAlgorithm: AlgorithmDefinition = {
