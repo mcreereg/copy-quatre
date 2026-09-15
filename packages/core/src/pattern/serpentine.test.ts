@@ -106,4 +106,38 @@ describe("serpentine pattern", () => {
     const median = compactnessValues[Math.floor(compactnessValues.length / 2)];
     expect(median).toBeGreaterThan(0.45);
   });
+
+  it("varies 2x2 path starts and first-step directions", () => {
+    const grids = new Set<string>();
+    const firstSteps = new Set<string>();
+    for (let seed = 0; seed < 80; seed++) {
+      const grid = serpentineAlgo.generateSerpentinePattern(2, createRng(seed));
+      grids.add(grid.map((row) => row.map((on) => (on ? "1" : "0")).join("")).join("|"));
+
+      const onCells: Array<{ row: number; col: number }> = [];
+      for (let row = 0; row < grid.length; row++) {
+        for (let col = 0; col < grid[row].length; col++) {
+          if (grid[row][col]) onCells.push({ row, col });
+        }
+      }
+      if (onCells.length < 2) continue;
+
+      outer: for (let i = 0; i < onCells.length; i++) {
+        const start = onCells[i];
+        for (let j = 0; j < onCells.length; j++) {
+          if (i === j) continue;
+          const second = onCells[j];
+          const dr = Math.abs(start.row - second.row);
+          const dc = Math.abs(start.col - second.col);
+          if (dr + dc !== 1) continue;
+          firstSteps.add(`${start.row},${start.col}->${second.row},${second.col}`);
+          break outer;
+        }
+      }
+    }
+
+    expect(grids.size).toBeGreaterThan(2);
+    expect(firstSteps.size).toBeGreaterThan(2);
+    expect([...firstSteps].some((step) => !step.startsWith("0,0->"))).toBe(true);
+  });
 });
